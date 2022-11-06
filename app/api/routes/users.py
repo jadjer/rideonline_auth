@@ -31,7 +31,7 @@ from app.models.schemas.user import (
     UserInUpdate,
 )
 from app.resources import strings
-from app.services.authentication import (
+from app.services.validate import (
     check_phone_is_valid,
     check_phone_is_taken,
     check_username_is_taken,

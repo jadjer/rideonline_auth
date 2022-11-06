@@ -33,21 +33,15 @@ class AppSettings(BaseAppSettings):
     version: str = "0.1.0"
 
     database_host: str
-    database_name: str
+    database_port: int = 7687
     database_user: str
     database_pass: str
 
-    max_connection_count: int = 10
-    min_connection_count: int = 10
-
-    sms_api_host: HttpUrl
-    sms_api_user: str
-    sms_api_pass: str
-    sms_max_chars: int = 160
+    sms_server: HttpUrl
 
     secret_key: SecretStr
 
-    api_prefix: str = "/api/v1"
+    api_prefix: str = ""
 
     jwt_token_prefix: str = "Token"
 
@@ -73,11 +67,9 @@ class AppSettings(BaseAppSettings):
 
     @property
     def get_database_url(self) -> str:
-        url_string: str = "postgresql+asyncpg://{user}:{password}@{host}/{db_name}".format(
-            user=self.database_user,
-            password=self.database_pass,
+        url_string: str = "neo4j://{host}:{port}".format(
             host=self.database_host,
-            db_name=self.database_name
+            port=self.database_port
         )
 
         return url_string

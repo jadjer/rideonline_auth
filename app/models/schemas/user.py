@@ -16,14 +16,13 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.models.domain.user import User
-from app.models.schemas.rwschema import RWSchema
 
 
-class PhoneInVerification(RWSchema):
+class PhoneInVerification(BaseModel):
     phone: str
 
 
-class UserInLogin(RWSchema):
+class UserInLogin(BaseModel):
     username: str
     password: str
 
@@ -44,9 +43,9 @@ class UserWithToken(User):
     token: str
 
 
-class UserInResponse(RWSchema):
+class UserInResponse(BaseModel):
     user: User
 
 
-class UserInResponseWithToken(RWSchema):
+class UserInResponseWithToken(BaseModel):
     user: UserWithToken

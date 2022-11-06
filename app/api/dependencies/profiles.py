@@ -12,25 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import Depends, HTTPException, Path, status, Query
+from fastapi import Depends, HTTPException, Path, status
 
 from app.api.dependencies.database import get_repository
 from app.database.errors import EntityDoesNotExists
 from app.database.repositories.profiles import ProfilesRepository
 from app.models.domain.profile import Profile
-from app.models.schemas.post import PostsFilter
-from app.models.schemas.profile import (
-    DEFAULT_PROFILES_LIMIT,
-    DEFAULT_PROFILES_OFFSET,
-)
 from app.resources import strings
-
-
-def get_profiles_filter(
-        limit: int = Query(DEFAULT_PROFILES_LIMIT, ge=1),
-        offset: int = Query(DEFAULT_PROFILES_OFFSET, ge=0),
-) -> PostsFilter:
-    return PostsFilter(limit=limit, offset=offset)
 
 
 async def get_profile_by_username_from_path(

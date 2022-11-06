@@ -12,22 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    HTTPException,
-    status,
-    Response,
-)
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Response
 
 from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
-from app.database.errors import (
-    EntityDoesNotExists,
-    EntityCreateError,
-)
+from app.database.errors import EntityDoesNotExists, EntityCreateError
 from app.database.repositories.users import UsersRepository
 from app.database.repositories.verification_codes import VerificationRepository
 from app.models.domain.user import UserInDB
@@ -40,15 +30,8 @@ from app.models.schemas.user import (
 )
 from app.resources import strings
 from app.services import jwt
-from app.services.authentication import (
-    check_username_is_taken,
-    check_phone_is_valid,
-    check_phone_is_taken,
-)
-from app.services.sms import (
-    is_hilink,
-    send_verify_code_to_phone,
-)
+from app.services.validate import check_username_is_taken, check_phone_is_valid, check_phone_is_taken
+from app.services.sms import send_verify_code_to_phone
 
 router = APIRouter()
 
@@ -84,15 +67,9 @@ async def get_verification_code(
     if not check_phone_is_valid(verification.phone):
         raise phone_number_invalid
 
-    if not await is_hilink(settings.sms_api_host):
-        raise verification_service_unavailable
+    code = await verification_repo.create_verification_code_by_phone(verification.phone)
 
-    try:
-        code = await verification_repo.create_verification_code_by_phone(verification.phone)
-    except EntityCreateError as exception:
-        raise create_verification_code_error from exception
-
-    if not await send_verify_code_to_phone(settings.sms_api_host, verification.phone, code):
+    if not await send_verify_code_to_phone(settings.sms_server, verification.phone, code):
         raise phone_sms_send_error
 
 

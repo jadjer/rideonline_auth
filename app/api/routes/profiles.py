@@ -24,7 +24,6 @@ from fastapi import (
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.get_id_from_path import get_user_id_from_path
-from app.api.dependencies.profiles import get_profiles_filter
 from app.database.errors import EntityDoesNotExists, EntityUpdateError
 from app.database.repositories.profiles import ProfilesRepository
 from app.models.schemas.profile import (
@@ -35,23 +34,6 @@ from app.models.schemas.profile import (
 from app.resources import strings
 
 router = APIRouter()
-
-
-@router.get(
-    "",
-    response_model=ListOfProfileInResponse,
-    name="profiles:get-all-profiles",
-    dependencies=[
-        Depends(get_current_user_authorizer())
-    ]
-)
-async def get_profiles(
-        profiles_filter: ProfilesFilter = Depends(get_profiles_filter),
-        profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
-) -> ListOfProfileInResponse:
-    profiles = await profiles_repo.get_profiles_with_filter(profiles_filter.limit, profiles_filter.offset)
-
-    return ListOfProfileInResponse(profiles=profiles, count=len(profiles))
 
 
 @router.get(

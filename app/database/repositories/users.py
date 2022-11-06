@@ -13,7 +13,8 @@
 #  limitations under the License.
 
 from typing import Optional
-from sqlalchemy import select
+
+from neo4j import AsyncResult
 
 from app.database.errors import (
     EntityDoesNotExists,
@@ -22,7 +23,6 @@ from app.database.errors import (
 )
 from app.database.repositories.base import BaseRepository
 from app.models.domain.user import UserInDB
-from app.database.models import UserModel
 
 
 class UsersRepository(BaseRepository):
@@ -32,61 +32,59 @@ class UsersRepository(BaseRepository):
             username: str,
             phone: str,
             password: str,
-    ) -> UserInDB:
+    ):
         user: UserInDB = UserInDB(username=username, phone=phone)
         user.change_password(password)
 
-        new_user: UserModel = UserModel()
-        new_user.username = user.username
-        new_user.phone = user.phone
-        new_user.salt = user.salt
-        new_user.password = user.password
-
-        self.session.add(new_user)
+        query = f"CREATE (u:User {user.dict()});"
 
         try:
-            await self.session.commit()
+            result: AsyncResult = await self.session.run(query)
         except Exception as exception:
             raise EntityCreateError from exception
 
-        return await self.get_user_by_id(new_user.id)
+        # return await self.get_user_by_id(new_user.id)
 
     async def get_user_by_id(self, user_id: int) -> UserInDB:
-        user_in_db: UserModel = await self._get_user_model_by_id(user_id)
-        if not user_in_db:
-            raise EntityDoesNotExists
-
-        return self._convert_user_model_to_model(user_in_db)
+        # user_in_db: UserModel = await self._get_user_model_by_id(user_id)
+        # if not user_in_db:
+        #     raise EntityDoesNotExists
+        #
+        # return self._convert_user_model_to_model(user_in_db)
+        pass
 
     async def get_user_by_email(self, email: str) -> UserInDB:
-        query = select(UserModel).where(UserModel.email == email)
-        result = await self.session.execute(query)
-
-        user_in_db = result.scalars().first()
-        if not user_in_db:
-            raise EntityDoesNotExists
-
-        return self._convert_user_model_to_model(user_in_db)
+        # query = select(UserModel).where(UserModel.email == email)
+        # result = await self.session.execute(query)
+        #
+        # user_in_db = result.scalars().first()
+        # if not user_in_db:
+        #     raise EntityDoesNotExists
+        #
+        # return self._convert_user_model_to_model(user_in_db)
+        pass
 
     async def get_user_by_username(self, username: str) -> UserInDB:
-        query = select(UserModel).where(UserModel.username == username)
-        result = await self.session.execute(query)
-
-        user_in_db = result.scalars().first()
-        if not user_in_db:
-            raise EntityDoesNotExists
-
-        return self._convert_user_model_to_model(user_in_db)
+        # query = select(UserModel).where(UserModel.username == username)
+        # result = await self.session.execute(query)
+        #
+        # user_in_db = result.scalars().first()
+        # if not user_in_db:
+        #     raise EntityDoesNotExists
+        #
+        # return self._convert_user_model_to_model(user_in_db)
+        pass
 
     async def get_user_by_phone(self, phone: str) -> UserInDB:
-        query = select(UserModel).where(UserModel.phone == phone)
-        result = await self.session.execute(query)
-
-        user_in_db = result.scalars().first()
-        if not user_in_db:
-            raise EntityDoesNotExists
-
-        return self._convert_user_model_to_model(user_in_db)
+        # query = select(UserModel).where(UserModel.phone == phone)
+        # result = await self.session.execute(query)
+        #
+        # user_in_db = result.scalars().first()
+        # if not user_in_db:
+        #     raise EntityDoesNotExists
+        #
+        # return self._convert_user_model_to_model(user_in_db)
+        pass
 
     async def update_user_by_user(
             self,
@@ -97,33 +95,35 @@ class UsersRepository(BaseRepository):
             password: Optional[str] = None,
 
     ) -> UserInDB:
-        user_in_db = await self._get_user_model_by_id(user_id)
-        user_in_db.username = username or user_in_db.username
-        user_in_db.phone = phone or user_in_db.phone
+        # user_in_db = await self._get_user_model_by_id(user_id)
+        # user_in_db.username = username or user_in_db.username
+        # user_in_db.phone = phone or user_in_db.phone
+        #
+        # if password:
+        #     user = UserInDB(**user_in_db.__dict__)
+        #     user.change_password(password)
+        #
+        #     user_in_db.salt = user.salt
+        #     user_in_db.password = user.password
+        #
+        # try:
+        #     await self.session.commit()
+        # except Exception as exception:
+        #     raise EntityUpdateError from exception
+        #
+        # return await self.get_user_by_id(user_id)
+        pass
 
-        if password:
-            user = UserInDB(**user_in_db.__dict__)
-            user.change_password(password)
-
-            user_in_db.salt = user.salt
-            user_in_db.password = user.password
-
-        try:
-            await self.session.commit()
-        except Exception as exception:
-            raise EntityUpdateError from exception
-
-        return await self.get_user_by_id(user_id)
-
-    async def _get_user_model_by_id(self, user_id: int) -> UserModel:
-        user_in_db: UserModel = await self.session.get(UserModel, user_id)
-        if not user_in_db:
-            raise EntityDoesNotExists
-
-        return user_in_db
+    async def _get_user_model_by_id(self, user_id: int):
+        # user_in_db: UserModel = await self.session.get(UserModel, user_id)
+        # if not user_in_db:
+        #     raise EntityDoesNotExists
+        #
+        # return user_in_db
+        pass
 
     @staticmethod
-    def _convert_user_model_to_model(user_model: UserModel) -> UserInDB:
+    def _convert_user_model_to_model(user_model) -> UserInDB:
         return UserInDB(
             id=user_model.id,
             username=user_model.username,

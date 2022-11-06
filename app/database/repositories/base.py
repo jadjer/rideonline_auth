@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from neo4j import AsyncSession
 
 
 class BaseRepository:

@@ -12,19 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-
-from app.database.base import Base
+from app.models.common import IDModelMixin, DateTimeModelMixin
 
 
-class TokenModel(Base):
-    __tablename__ = "token"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-
-    token = Column(String, nullable=False)
-    is_revoked = Column(Boolean, default=False)
-
-    user = relationship("UserModel")
+class VerificationCode(IDModelMixin, DateTimeModelMixin):
+    phone: str
+    verification_code: int
+    is_verified: bool = False

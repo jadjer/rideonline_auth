@@ -13,103 +13,18 @@
 #  limitations under the License.
 
 from random import randrange
-from typing import List
-from sqlalchemy import select, and_
-
-from app.database.errors import (
-    EntityDoesNotExists,
-    EntityDeleteError,
-    EntityCreateError, EntityUpdateError,
-)
-from app.database.models import VerificationCodeModel
 from app.database.repositories.base import BaseRepository
 
 
 class VerificationRepository(BaseRepository):
 
     async def create_verification_code_by_phone(self, phone: str) -> int:
-        new_verification_code = VerificationCodeModel()
-        new_verification_code.phone = phone
-        new_verification_code.verification_code = randrange(100000, 999999)
+        verification_code = randrange(100000, 999999)
 
-        self.session.add(new_verification_code)
+        query = f"MERGE (p:PhoneVerification {{phone: {phone}}}) " \
+                f"SET p.verification_code={verification_code}, p.is_verified={False} " \
+                f"RETURN p;"
 
-        try:
-            await self.session.commit()
-        except Exception as exception:
-            raise EntityCreateError from exception
+        await self.session.run(query)
 
-        return new_verification_code.verification_code
-
-    async def get_verification_code_by_phone_and_code(self, phone: str, verification_code: int) -> int:
-        verification_code_in_db: VerificationCodeModel = await self._get_verification_code_by_phone_and_code(
-            phone, verification_code
-        )
-        if not verification_code_in_db:
-            raise EntityDoesNotExists
-
-        return verification_code_in_db.verification_code
-
-    async def mark_as_verified_by_phone_and_verification_code(self, phone: str, verification_code: int) -> None:
-        verification_code_in_db: VerificationCodeModel = await self._get_verification_code_by_phone_and_code(
-            phone, verification_code
-        )
-        verification_code_in_db.is_verified = True
-
-        try:
-            await self.session.commit()
-        except Exception as exception:
-            raise EntityUpdateError from exception
-
-    async def delete_verification_code_by_phone_and_code(self, phone: str, verification_code: int) -> None:
-        verification_code_in_db = await self._get_verification_code_by_phone_and_code(phone, verification_code)
-
-        try:
-            await self.session.delete(verification_code_in_db)
-            await self.session.commit()
-        except Exception as exception:
-            raise EntityDeleteError from exception
-
-    async def delete_verification_codes_by_phone(self, phone: str) -> None:
-        verification_codes_in_db = await self._get_verification_codes_by_phone(phone)
-
-        for verification_code_in_db in verification_codes_in_db:
-            await self.session.delete(verification_code_in_db)
-
-        try:
-            await self.session.commit()
-        except Exception as exception:
-            raise EntityDeleteError from exception
-
-    async def _get_verification_code_by_phone_and_code(
-            self,
-            phone: str,
-            verification_code: int
-    ) -> VerificationCodeModel:
-        query = select(VerificationCodeModel).where(
-            and_(
-                VerificationCodeModel.phone == phone,
-                VerificationCodeModel.verification_code == verification_code,
-                VerificationCodeModel.is_verified == False
-            )
-        )
-        result = await self.session.execute(query)
-
-        verification_code_in_db: VerificationCodeModel = result.scalars().first()
-        if not verification_code_in_db:
-            raise EntityDoesNotExists
-
-        return verification_code_in_db
-
-    async def _get_verification_codes_by_phone(self, phone: str) -> List[VerificationCodeModel]:
-        query = select(VerificationCodeModel).where(
-            and_(
-                VerificationCodeModel.phone == phone,
-                VerificationCodeModel.is_verified == False
-            )
-        )
-        result = await self.session.execute(query)
-
-        verification_codes_in_db: VerificationCodeModel = result.scalars().all()
-
-        return verification_codes_in_db
+        return verification_code

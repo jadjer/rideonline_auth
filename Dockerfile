@@ -1,5 +1,9 @@
 FROM python
 
+ARG VERSION
+
+ENV VERSION=${VERSION}
+
 WORKDIR /app
 
 RUN pip install --upgrade pip
