@@ -18,8 +18,8 @@ from fastapi import FastAPI, status
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.repositories.users import UsersRepository
-from app.database.repositories.verification_codes import VerificationRepository
+from app.database.repositories.user_repository import UsersRepository
+from app.database.repositories.phone_repository import VerificationRepository
 from app.models.domain.user import User
 
 

@@ -16,7 +16,7 @@ from typing import Callable, Type
 
 from fastapi import Depends
 from fastapi.requests import Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from neo4j import AsyncSession
 
 from app.database.repositories.base import BaseRepository
 

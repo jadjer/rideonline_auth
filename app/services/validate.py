@@ -13,16 +13,7 @@
 #  limitations under the License.
 
 from loguru import logger
-from phonenumbers import (
-    NumberParseException,
-    parse,
-    is_possible_number,
-    is_valid_number,
-)
-from pydantic import EmailStr
-
-from app.database.errors import EntityDoesNotExists
-from app.database.repositories.users import UsersRepository
+from phonenumbers import NumberParseException, parse, is_possible_number, is_valid_number
 
 
 def check_phone_is_valid(phone_number: str) -> bool:
@@ -33,38 +24,11 @@ def check_phone_is_valid(phone_number: str) -> bool:
         return False
 
     if not is_possible_number(phone):
-        logger.warning(f"Phone number {phone_number} is inpossible number")
+        logger.warning(f"Phone number {phone_number} is impossible number")
         return False
 
     if not is_valid_number(phone):
         logger.warning(f"Phone number {phone_number} is invalid number")
-        return False
-
-    return True
-
-
-async def check_phone_is_taken(repo: UsersRepository, phone: str) -> bool:
-    try:
-        await repo.get_user_by_phone(phone)
-    except EntityDoesNotExists:
-        return False
-
-    return True
-
-
-async def check_username_is_taken(repo: UsersRepository, username: str) -> bool:
-    try:
-        await repo.get_user_by_username(username)
-    except EntityDoesNotExists:
-        return False
-
-    return True
-
-
-async def check_email_is_taken(repo: UsersRepository, email: EmailStr) -> bool:
-    try:
-        await repo.get_user_by_email(email=email)
-    except EntityDoesNotExists:
         return False
 
     return True

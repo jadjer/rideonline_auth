@@ -12,40 +12,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
 from pydantic import BaseModel
 
 from app.models.domain.user import User
 
 
-class PhoneInVerification(BaseModel):
+class PhoneVerification(BaseModel):
     phone: str
 
 
-class UserInLogin(BaseModel):
-    username: str
-    password: str
-
-
-class UserInCreate(UserInLogin):
+class UserLogin(BaseModel):
     phone: str
     verification_code: int
 
 
-class UserInUpdate(BaseModel):
-    username: Optional[str] = None
-    phone: Optional[str] = None
-    password: Optional[str] = None
-    verification_code: Optional[int] = None
+class UserCreate(BaseModel):
+    username: str
+    phone: str
+    verification_code: int
+
+
+class UserChangeUsername(BaseModel):
+    username: str
+    verification_code: int
+
+
+class UserChangePhone(BaseModel):
+    phone: str
+    verification_code: int
 
 
 class UserWithToken(User):
     token: str
 
 
-class UserInResponse(BaseModel):
+class UserResponse(BaseModel):
     user: User
 
 
-class UserInResponseWithToken(BaseModel):
+class UserResponseWithToken(BaseModel):
     user: UserWithToken

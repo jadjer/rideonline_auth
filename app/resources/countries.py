@@ -12,10 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from .entity_does_not_exists import EntityDoesNotExists
-from .entity_already_exists import EntityAlreadyExists
-from .entity_create_error import EntityCreateError
-from .entity_get_error import EntityGetError
-from .entity_update_error import EntityUpdateError
-from .entity_delete_error import EntityDeleteError
+import pycountry
 
+
+class Countries(object):
+
+    def is_valid(self, country_name: str) -> bool:
+        pycountry.countries.search_fuzzy(country_name)

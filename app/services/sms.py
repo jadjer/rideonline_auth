@@ -18,5 +18,5 @@ from typing import List
 from httpx import AsyncClient
 
 
-async def send_verify_code_to_phone(sms_server: str, phone: str, code: int) -> bool:
+async def send_verify_code_to_phone(sms_server: str, phone: str, code: str) -> bool:
     pass

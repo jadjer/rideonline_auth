@@ -12,171 +12,90 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status, Response
+from loguru import logger
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 
-from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
-from app.database.errors import EntityDoesNotExists, EntityCreateError
-from app.database.repositories.users import UsersRepository
-from app.database.repositories.verification_codes import VerificationRepository
-from app.models.domain.user import UserInDB
+from app.database.repositories import UserRepository, PhoneRepository
+from app.models.domain.user import User
 from app.models.schemas.user import (
-    UserInCreate,
-    UserInLogin,
+    UserCreate,
+    UserLogin,
     UserWithToken,
-    UserInResponseWithToken,
-    PhoneInVerification,
+    UserResponseWithToken,
+    PhoneVerification,
 )
-from app.resources import strings
 from app.services import jwt
-from app.services.validate import check_username_is_taken, check_phone_is_valid, check_phone_is_taken
+from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
+from app.api.dependencies.database import get_repository
+from app.resources import strings
 
 router = APIRouter()
 
 
-@router.post(
-    "/get_verification_code",
-    status_code=status.HTTP_200_OK,
-    name="auth:verification",
-    response_class=Response
-)
+@router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
-        verification: PhoneInVerification = Body(..., embed=True, alias="verification"),
-        verification_repo: VerificationRepository = Depends(get_repository(VerificationRepository)),
+        verification: PhoneVerification = Body(..., embed=True, alias="verification"),
+        phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> None:
-    phone_number_invalid = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.PHONE_NUMBER_INVALID_ERROR
-    )
-    verification_service_unavailable = HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail=strings.VERIFICATION_SERVICE_TEMPORARY_UNAVAILABLE
-    )
-    create_verification_code_error = HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail=strings.VERIFICATION_CODE_CREATE_ERROR
-    )
-    phone_sms_send_error = HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=strings.VERIFICATION_SERVICE_SEND_SMS_ERROR
-    )
-
     if not check_phone_is_valid(verification.phone):
-        raise phone_number_invalid
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
 
-    code = await verification_repo.create_verification_code_by_phone(verification.phone)
+    code = await phone_repository.create_verification_code(verification.phone)
 
     if not await send_verify_code_to_phone(settings.sms_server, verification.phone, code):
-        raise phone_sms_send_error
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=strings.SEND_SMS_ERROR)
 
 
-@router.post(
-    "/register",
-    status_code=status.HTTP_201_CREATED,
-    response_model=UserInResponseWithToken,
-    name="auth:register",
-)
+@router.post("/register", name="auth:register")
 async def register(
-        user_create: UserInCreate = Body(..., embed=True, alias="user"),
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
-        verification_repo: VerificationRepository = Depends(get_repository(VerificationRepository)),
+        user_create: UserCreate = Body(..., embed=True, alias="user"),
+        user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
-) -> UserInResponseWithToken:
-    phone_invalid = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.PHONE_NUMBER_INVALID_ERROR
-    )
-    phone_taken = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.PHONE_TAKEN
-    )
-    username_taken = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.USERNAME_TAKEN
-    )
-    verification_code_wrong = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.VERIFICATION_CODE_IS_WRONG
-    )
-    user_create_error = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.USER_CREATE_ERROR
-    )
+) -> UserResponseWithToken:
+    if await user_repository.is_exists(user_create.username):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
-    if not check_phone_is_valid(user_create.phone):
-        raise phone_invalid
+    if await phone_repository.is_attached(user_create.phone):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
 
-    if await check_phone_is_taken(users_repo, user_create.phone):
-        raise phone_taken
+    if not await phone_repository.verify_code(user_create.phone, user_create.verification_code):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
-    if await check_username_is_taken(users_repo, user_create.username):
-        raise username_taken
-
-    try:
-        await verification_repo.get_verification_code_by_phone_and_code(
-            user_create.phone,
-            user_create.verification_code
-        )
-    except EntityDoesNotExists as exception:
-        raise verification_code_wrong from exception
-
-    try:
-        user = await users_repo.create_user(
-            username=user_create.username,
-            phone=user_create.phone,
-            password=user_create.password
-        )
-    except EntityCreateError as exception:
-        raise user_create_error from exception
-
-    try:
-        await verification_repo.mark_as_verified_by_phone_and_verification_code(
-            user_create.phone, user_create.verification_code
-        )
-    except EntityDoesNotExists as exception:
-        raise verification_code_wrong from exception
+    user: User | None = await user_repository.create_user(user_create.username, user_create.phone)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.USER_CREATE_ERROR)
 
     token = jwt.create_access_token_for_user(
         user_id=user.id,
         username=user.username,
-        phone=user.phone,
         secret_key=settings.secret_key.get_secret_value()
     )
 
-    return UserInResponseWithToken(user=UserWithToken(token=token, **user.__dict__))
+    return UserResponseWithToken(user=UserWithToken(token=token, username=user_create.username))
 
 
-@router.post(
-    "/login",
-    response_model=UserInResponseWithToken,
-    name="auth:login",
-)
+@router.post("/login", response_model=UserResponseWithToken, name="auth:login")
 async def login(
-        user_login: UserInLogin = Body(..., embed=True, alias="user"),
-        users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        user_login: UserLogin = Body(..., embed=True, alias="user"),
+        user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
-) -> UserInResponseWithToken:
-    incorrect_credentials = HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=strings.INCORRECT_LOGIN_INPUT
-    )
+) -> UserResponseWithToken:
+    if not await phone_repository.verify_code(user_login.phone, user_login.verification_code):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
-    try:
-        user: UserInDB = await users_repo.get_user_by_username(user_login.username)
-    except EntityDoesNotExists as exception:
-        raise incorrect_credentials from exception
-
-    if not user.check_password(user_login.password):
-        raise incorrect_credentials
+    user: User | None = await user_repository.get_user_by_phone(user_login.phone)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.INCORRECT_LOGIN_INPUT)
 
     token = jwt.create_access_token_for_user(
-        user_id=user.id,
         username=user.username,
-        phone=user.phone,
         secret_key=settings.secret_key.get_secret_value()
     )
 
-    return UserInResponseWithToken(user=UserWithToken(token=token, **user.__dict__))
+    return UserResponseWithToken(user=UserWithToken(token=token, username=user.username))

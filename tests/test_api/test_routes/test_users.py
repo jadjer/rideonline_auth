@@ -19,8 +19,8 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
-from app.database.repositories.profiles import ProfilesRepository
-from app.database.repositories.users import UsersRepository
+from app.database.repositories.profile_repository import ProfilesRepository
+from app.database.repositories.user_repository import UsersRepository
 from app.models.domain.profile import Profile
 from app.models.domain.user import UserInDB, User
 from app.models.schemas.user import UserInResponse

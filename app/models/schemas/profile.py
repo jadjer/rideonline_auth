@@ -16,7 +16,7 @@ from typing import Optional, List
 
 from pydantic import EmailStr, HttpUrl, BaseModel, Field
 
-from app.models.domain.profile import Gender, Profile
+from app.models.domain.user import Gender, UserProfile
 
 DEFAULT_PROFILES_LIMIT = 100
 DEFAULT_PROFILES_OFFSET = 0
@@ -42,11 +42,11 @@ class ProfileInUpdate(BaseModel):
 
 
 class ProfileInResponse(BaseModel):
-    profile: Profile
+    profile: UserProfile
 
 
 class ListOfProfileInResponse(BaseModel):
-    profiles: List[Profile]
+    profiles: List[UserProfile]
     count: int
 
 

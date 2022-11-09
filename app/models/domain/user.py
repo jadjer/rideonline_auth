@@ -12,24 +12,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from enum import Enum
+from typing import Optional
+from pydantic import HttpUrl
+
 from app.models.common import IDModelMixin
-from app.services import security
+
+
+class Gender(Enum):
+    UNDEFINED = "undefined"
+    MALE = "male"
+    FEMALE = "female"
 
 
 class User(IDModelMixin):
     username: str
-    phone: str
-    is_admin: bool = False
     is_blocked: bool = False
 
 
-class UserInDB(User):
-    salt: str = ""
-    password: str = ""
-
-    def check_password(self, password: str) -> bool:
-        return security.verify_password(self.salt + password, self.password)
-
-    def change_password(self, password: str) -> None:
-        self.salt = security.generate_salt()
-        self.password = security.get_password_hash(self.salt + password)
+class UserProfile(User):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Gender = Gender.UNDEFINED
+    age: Optional[int] = None
+    country: Optional[str] = None
+    region: Optional[str] = None
+    image: Optional[HttpUrl] = None
