@@ -24,19 +24,17 @@ router = APIRouter()
 
 
 @router.get("", response_model=ProfileResponse, name="user:get")
-@router.get("/me", response_model=ProfileResponse, name="user:get")
 async def get_current_user(
         user: User = Depends(get_current_user_authorizer()),
 ) -> ProfileResponse:
     return ProfileResponse(user=user)
 
 
-@router.get("", response_model=ProfileResponse, name="user:update")
-@router.put("/me", response_model=ProfileResponse, name="user:update")
+@router.patch("", response_model=ProfileResponse, name="user:update")
 async def update_my_profile(
         profile_update: ProfileUpdate = Body(..., embed=True, alias="profile"),
         user: User = Depends(get_current_user_authorizer()),
         profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
 ) -> ProfileResponse:
-    profile = await profile_repository.update_profile(user.username, **profile_update.__dict__)
+    profile = await profile_repository.update_profile(user.username)
     return ProfileResponse(profile=profile)

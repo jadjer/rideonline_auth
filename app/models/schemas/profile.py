@@ -15,7 +15,7 @@
 from typing import Optional
 from pydantic import HttpUrl, BaseModel
 
-from app.models.domain.user import Gender, UserProfile
+from app.models.domain.profile import Gender, Profile
 
 
 class ProfileUpdate(BaseModel):
@@ -28,4 +28,4 @@ class ProfileUpdate(BaseModel):
 
 
 class ProfileResponse(BaseModel):
-    profile: UserProfile
+    profile: Profile

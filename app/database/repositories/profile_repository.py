@@ -20,7 +20,7 @@ from app.models.domain.profile import Profile
 
 
 class ProfileRepository(BaseRepository):
-    def update_profile(self, username, *, param) -> Profile | None:
+    async def update_profile(self, username) -> Profile | None:
         query = """
             MERGE (u:User {username: $username}) 
             SET u.secret=$secret 
