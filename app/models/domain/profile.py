@@ -12,12 +12,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel, HttpUrl
 
 
-class User(BaseModel):
-    username: str
-    is_blocked: bool = False
+class Gender(Enum):
+    UNDEFINED = "undefined"
+    MALE = "male"
+    FEMALE = "female"
 
 
-
+class Profile(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Gender = Gender.UNDEFINED
+    age: Optional[int] = None
+    country: Optional[str] = None
+    region: Optional[str] = None
+    image: Optional[HttpUrl] = None

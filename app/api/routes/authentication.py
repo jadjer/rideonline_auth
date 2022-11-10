@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from loguru import logger
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from app.core.config import get_app_settings
@@ -70,11 +69,7 @@ async def register(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.USER_CREATE_ERROR)
 
-    token = jwt.create_access_token_for_user(
-        user_id=user.id,
-        username=user.username,
-        secret_key=settings.secret_key.get_secret_value()
-    )
+    token = jwt.create_access_token_for_user(username=user.username, secret_key=settings.secret_key.get_secret_value())
 
     return UserResponseWithToken(user=UserWithToken(token=token, username=user_create.username))
 
@@ -93,9 +88,6 @@ async def login(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.INCORRECT_LOGIN_INPUT)
 
-    token = jwt.create_access_token_for_user(
-        username=user.username,
-        secret_key=settings.secret_key.get_secret_value()
-    )
+    token = jwt.create_access_token_for_user(username=user.username, secret_key=settings.secret_key.get_secret_value())
 
     return UserResponseWithToken(user=UserWithToken(token=token, username=user.username))

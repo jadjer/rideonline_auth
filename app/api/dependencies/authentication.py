@@ -43,10 +43,6 @@ def get_current_user_authorizer() -> Callable:
     return _get_current_user
 
 
-def get_current_user_id_authorizer() -> Callable:
-    return _get_current_user_id
-
-
 def _get_authorization_header(
         api_key: str = Security(MyApiKeyHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),

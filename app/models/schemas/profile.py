@@ -12,27 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional, List
-
-from pydantic import EmailStr, HttpUrl, BaseModel, Field
+from typing import Optional
+from pydantic import HttpUrl, BaseModel
 
 from app.models.domain.user import Gender, UserProfile
 
-DEFAULT_PROFILES_LIMIT = 100
-DEFAULT_PROFILES_OFFSET = 0
 
-
-class ProfileInCreate(BaseModel):
-    email: EmailStr
-    first_name: str
-    second_name: str
-    last_name: str
-    gender: Gender = Gender.UNDEFINED
-    age: int
-    image: HttpUrl
-
-
-class ProfileInUpdate(BaseModel):
+class ProfileUpdate(BaseModel):
     first_name: Optional[str] = None
     second_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -41,15 +27,5 @@ class ProfileInUpdate(BaseModel):
     image: Optional[HttpUrl] = None
 
 
-class ProfileInResponse(BaseModel):
+class ProfileResponse(BaseModel):
     profile: UserProfile
-
-
-class ListOfProfileInResponse(BaseModel):
-    profiles: List[UserProfile]
-    count: int
-
-
-class ProfilesFilter(BaseModel):
-    limit: int = Field(DEFAULT_PROFILES_LIMIT, ge=1)
-    offset: int = Field(DEFAULT_PROFILES_OFFSET, ge=0)
