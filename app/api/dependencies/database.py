@@ -16,9 +16,13 @@ from typing import Callable, Type
 
 from fastapi import Depends
 from fastapi.requests import Request
-from neo4j import AsyncSession
+from neo4j import AsyncSession, AsyncDriver
 
-from app.database.repositories.base import BaseRepository
+from app.database.repositories.base_repository import BaseRepository
+
+
+def get_db_driver(request: Request) -> AsyncDriver:
+    return request.app.state.driver
 
 
 def _get_db_session(request: Request) -> AsyncSession:
@@ -26,7 +30,7 @@ def _get_db_session(request: Request) -> AsyncSession:
 
 
 def get_repository(repo_type: Type[BaseRepository]) -> Callable[[AsyncSession], BaseRepository]:
-    def _get_repo(session: AsyncSession = Depends(_get_db_session)) -> BaseRepository:
+    def _get_repo(session=Depends(_get_db_session)) -> BaseRepository:
         return repo_type(session)
 
     return _get_repo

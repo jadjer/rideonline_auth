@@ -15,7 +15,7 @@
 from typing import Optional
 from neo4j import AsyncResult, Record
 
-from app.database.repositories.base import BaseRepository
+from app.database.repositories.base_repository import BaseRepository
 from app.models.domain.profile import Profile
 
 

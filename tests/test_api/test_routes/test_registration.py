@@ -16,41 +16,37 @@ import pytest
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.repositories.user_repository import UsersRepository
-from app.database.repositories.phone_repository import VerificationRepository
+from app.database.repositories import UserRepository, PhoneRepository
 from app.models.domain.user import User
 
 
 @pytest.mark.asyncio
-async def test_user_success_registration(
-        initialized_app: FastAPI, client: AsyncClient, session: AsyncSession
-) -> None:
+async def test_user_success_registration(initialized_app: FastAPI, client: AsyncClient, session):
     phone = "+375257654321"
     username = "username"
     password = "password"
 
-    verification_repo = VerificationRepository(session)
+    verification_repo = PhoneRepository(session)
     verification_code = await verification_repo.create_verification_code_by_phone(phone)
 
     registration_json = {
-        "phone": phone,
-        "username": username,
-        "password": password,
-        "verification_code": verification_code
+        "user": {
+            "username": username,
+            "phone": phone,
+            "password": password,
+            "verification_code": verification_code
+        }
     }
-    response = await client.post(
-        initialized_app.url_path_for("auth:register"), json={"user": registration_json}
-    )
+
+    response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
     assert response.status_code == status.HTTP_201_CREATED
 
-    users_repo = UsersRepository(session)
-    user = await users_repo.get_user_by_username(username=username)
+    user_repository = UserRepository(session)
+    user = await user_repository.get_user_by_username(username=username)
 
     assert user.username == username
     assert user.phone == phone
-    assert user.check_password(password)
 
 
 @pytest.mark.asyncio
@@ -65,19 +61,19 @@ async def test_failed_user_registration_when_some_credentials_are_taken(
         initialized_app: FastAPI,
         client: AsyncClient,
         test_user: User,
-        session: AsyncSession,
+        session,
         credentials_part: str,
         credentials_value: str,
 ) -> None:
     phone = "+375257654321"
 
-    verification_repo = VerificationRepository(session)
-    verification_code = await verification_repo.create_verification_code_by_phone(phone)
+    phone_repository = PhoneRepository(session)
+    verification_code = await phone_repository.create_verification_code_by_phone(phone)
 
     registration_json = {
         "user": {
-            "phone": phone,
             "username": "username",
+            "phone": phone,
             "password": "password",
             "verification_code": verification_code
         }
@@ -88,4 +84,4 @@ async def test_failed_user_registration_when_some_credentials_are_taken(
         initialized_app.url_path_for("auth:register"), json=registration_json
     )
 
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_409_CONFLICT

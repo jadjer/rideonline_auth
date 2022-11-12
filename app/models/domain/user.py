@@ -12,12 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel
+from app.models.common import IDModelMixin
+from app.services import security
 
 
-class User(BaseModel):
+class User(IDModelMixin):
+    phone: str
     username: str
     is_blocked: bool = False
 
 
+class UserInDB(User):
+    salt: str = ""
+    password: str = ""
 
+    def check_password(self, password: str) -> bool:
+        return security.verify_password(self.salt + password, self.password)
+
+    def change_password(self, password: str) -> None:
+        self.salt = security.generate_salt()
+        self.password = security.get_password_hash(self.salt + password)

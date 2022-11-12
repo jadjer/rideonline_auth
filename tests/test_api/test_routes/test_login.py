@@ -21,9 +21,7 @@ from app.models.domain.user import User
 
 
 @pytest.mark.asyncio
-async def test_user_successful_login(
-        initialized_app: FastAPI, client: AsyncClient, test_user: User
-) -> None:
+async def test_user_successful_login(initialized_app: FastAPI, client: AsyncClient, test_user: User):
     login_json = {"user": {"username": "username", "password": "password"}}
 
     response = await client.post(initialized_app.url_path_for("auth:login"), json=login_json)

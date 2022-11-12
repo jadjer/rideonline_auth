@@ -11,3 +11,26 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+class EntityAlreadyExists(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityCreateError(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityDeleteError(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityDoesNotExists(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityGetError(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityUpdateError(Exception):
+    """Raised when entity was not found in database."""

@@ -12,8 +12,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from app.database.repositories.base import BaseRepository
-
-
-class TokenRepository(BaseRepository):
+class TokenRepository(object):
     pass

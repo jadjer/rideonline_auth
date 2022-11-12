@@ -22,13 +22,14 @@ class PhoneVerification(BaseModel):
 
 
 class UserLogin(BaseModel):
-    phone: str
-    verification_code: int
+    username: str
+    password: str
 
 
 class UserCreate(BaseModel):
     username: str
     phone: str
+    password: str
     verification_code: int
 
 
@@ -42,8 +43,9 @@ class UserChangePhone(BaseModel):
     verification_code: int
 
 
-class UserWithToken(User):
-    token: str
+class Token(BaseModel):
+    token_access: str
+    token_refresh: str
 
 
 class UserResponse(BaseModel):
@@ -51,4 +53,5 @@ class UserResponse(BaseModel):
 
 
 class UserResponseWithToken(BaseModel):
-    user: UserWithToken
+    user: User
+    token: Token

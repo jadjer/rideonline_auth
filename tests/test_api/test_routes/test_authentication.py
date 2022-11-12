@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.services.jwt import create_access_token_for_user
+from app.services import create_access_token_for_user
 
 
 @pytest.mark.asyncio
@@ -25,7 +25,7 @@ async def test_unable_to_login_with_wrong_jwt_prefix(
         app: FastAPI, client: AsyncClient, token: str
 ) -> None:
     response = await client.get(
-        app.url_path_for("users:get-current-user"),
+        app.url_path_for("user:get"),
         headers={"Authorization": f"WrongPrefix {token}"},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -38,11 +38,11 @@ async def test_unable_to_login_when_user_does_not_exist_any_more(
     token = create_access_token_for_user(
         user_id=9999999999999,
         username="test_user",
-        phone="+375123456789",
-        secret_key="secret"
+        phone="+375257894525",
+        secret_key="secret",
     )
     response = await client.get(
-        app.url_path_for("users:get-current-user"),
+        app.url_path_for("user:get"),
         headers={"Authorization": f"{authorization_prefix} {token}"},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN

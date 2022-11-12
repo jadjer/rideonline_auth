@@ -12,70 +12,73 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from neo4j import Record, AsyncResult, AsyncTransaction
-from neo4j.graph import Node
+from loguru import logger
 
-from app.database.repositories.base import BaseRepository
-from app.models.domain.user import User
+from neo4j import Record, AsyncResult
+from neo4j.exceptions import ConstraintError
+
+from app.database.repositories.base_repository import BaseRepository
+from app.models.domain.user import User, UserInDB
 
 
 class UserRepository(BaseRepository):
 
-    async def create_user(self, username: str, phone: str) -> User | None:
-        async def create_user_node(tx) -> User | None:
-            query = """
-                CREATE (u:User {username: $username}) 
-                RETURN u AS user
-            """
+    async def create_user(self, username: str, phone: str, password: str) -> User | None:
+        query = """
+            MERGE (phone:Phone { number: $phone }) 
+            CREATE (user:User { username: $username, password: $password, salt: $salt, is_blocked: $is_blocked }) 
+            CREATE (phone)-[:Attached]->(user) 
+            RETURN id(user) AS user_id, user, phone
+        """
 
-            result: AsyncResult = await tx.run(query, username=username)
+        user = UserInDB(username=username, phone=phone)
+        user.change_password(password)
+
+        result: AsyncResult = await self.session.run(
+            query,
+            phone=phone,
+            username=user.username,
+            password=user.password,
+            salt=user.salt,
+            is_blocked=user.is_blocked
+        )
+
+        try:
             record: Record | None = await result.single()
+        except ConstraintError as exception:
+            logger.warning(exception)
+            return None
 
-            if not record:
-                await transaction.rollback()
-                return None
+        if not record:
+            logger.warning("Query result is empty")
+            return None
 
-            return self._get_user_from_record(record)
-
-        async def attache_phone_for_user(tx):
-            query = """
-                MATCH (u:User {username: $username}), (p:Phone {phone: $phone}) 
-                CREATE (p)-[:Attached]->(u)
-            """
-
-            await tx.run(query, username=username, phone=phone)
-
-        transaction: AsyncTransaction = await self.session.begin_transaction()
-
-        user = await create_user_node(transaction)
-        await attache_phone_for_user(transaction)
-
-        await transaction.commit()
-        await transaction.close()
+        user.id = record["user_id"]
 
         return user
 
-    async def get_user_by_id(self, user_id: int) -> User:
+    async def get_user_by_username(self, username: str) -> UserInDB | None:
         query = """
-            MATCH (u:User) 
-            WHERE id(u)=$user_id 
-            RETURN u AS user
+            MATCH (phone:Phone)-[:Attached]->(user:User {username: $username}) 
+            RETURN id(user) AS user_id, user, phone
         """
-        return await self._get_user(query, user_id=user_id)
 
-    async def get_user_by_username(self, username: str) -> User:
-        query = """
-            MATCH (u:User {username: $username}) 
-            RETURN u AS user
-        """
-        return await self._get_user(query, username=username)
+        result: AsyncResult = await self.session.run(query, username=username)
+        record: Record | None = await result.single()
 
-    async def get_user_by_phone(self, phone: str) -> User:
-        query = """
-            MATCH (u:User)<-[:Attached]-(p:Phone {phone: $phone}) 
-            RETURN u AS user
-        """
-        return await self._get_user(query, phone=phone)
+        if not record:
+            return None
+
+        user = UserInDB(
+            id=record["user_id"],
+            phone=record["phone"]["number"],
+            username=record["user"]["username"],
+            password=record["user"]["password"],
+            salt=record["user"]["salt"],
+            is_blocked=record["user"]["is_blocked"],
+        )
+
+        return user
 
     async def is_exists(self, username: str) -> bool:
         user: User | None = await self.get_user_by_username(username)
@@ -83,28 +86,3 @@ class UserRepository(BaseRepository):
             return True
 
         return False
-
-    async def _get_user(self, query: str, **kwargs) -> User | None:
-        transaction: AsyncTransaction = await self.session.begin_transaction()
-
-        result: AsyncResult = await transaction.run(query, kwargs)
-        record: Record | None = await result.single()
-
-        if not record:
-            await transaction.rollback()
-            return None
-
-        await transaction.commit()
-        await transaction.close()
-
-        return self._get_user_from_record(record)
-
-    def _get_user_from_record(self, record: Record) -> User:
-        user_data: Node = record["user"]
-
-        user = User(username=user_data["username"])
-
-        if "is_blocked" in user_data.keys():
-            user.is_blocked = user_data["is_blocked"]
-
-        return user

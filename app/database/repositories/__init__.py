@@ -14,3 +14,4 @@
 
 from .user_repository import UserRepository
 from .phone_repository import PhoneRepository
+from .profile_repository import ProfileRepository

@@ -15,12 +15,12 @@
 from fastapi import FastAPI
 from loguru import logger
 
-from neo4j import AsyncSession, AsyncGraphDatabase, AsyncDriver
+from neo4j import AsyncGraphDatabase, AsyncDriver, AsyncSession
 
 from app.core.settings.app import AppSettings
 
 
-async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncSession:
+async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncDriver:
     logger.info("Connecting to Neo4j")
 
     driver: AsyncDriver = AsyncGraphDatabase.driver(
@@ -30,21 +30,23 @@ async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncSession:
             settings.database_pass
         )
     )
-    app.state.driver = driver
-
     session: AsyncSession = driver.session()
+
+    app.state.driver = driver
     app.state.session = session
 
     logger.info("Connection established")
 
-    return session
+    return driver
 
 
 async def close_db_connection(app: FastAPI) -> None:
     logger.info("Closing connection to database")
 
     driver: AsyncDriver = app.state.driver
+    session: AsyncSession = app.state.session
 
+    await session.close()
     await driver.close()
 
     logger.info("Connection closed")

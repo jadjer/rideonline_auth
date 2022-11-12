@@ -5,6 +5,7 @@ uvicorn
 pydantic
 phonenumbers
 pytest
+pytest-asyncio
 httpx
 neo4j
 pyotp

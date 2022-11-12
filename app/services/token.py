@@ -35,8 +35,8 @@ def create_access_token(data: dict, secret_key: str, expires_delta: timedelta | 
     return encoded_jwt
 
 
-def create_access_token_for_user(username: str, secret_key: str) -> str:
-    jwt_user = JWTUser(username=username)
+def create_access_token_for_user(user_id: int, username: str, phone: str, secret_key: str) -> str:
+    jwt_user = JWTUser(user_id=user_id, username=username, phone=phone)
     return create_access_token(
         data=jwt_user.__dict__,
         secret_key=secret_key,
@@ -47,6 +47,15 @@ def create_access_token_for_user(username: str, secret_key: str) -> str:
 def get_username_from_token(token: str, secret_key: str) -> str:
     try:
         return JWTUser(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).username
+    except JWTError as decode_error:
+        raise ValueError("unable to decode JWT token") from decode_error
+    except ValidationError as validation_error:
+        raise ValueError("malformed payload in token") from validation_error
+
+
+def get_phone_from_token(token: str, secret_key: str) -> str:
+    try:
+        return JWTUser(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).phone
     except JWTError as decode_error:
         raise ValueError("unable to decode JWT token") from decode_error
     except ValidationError as validation_error:

@@ -14,23 +14,22 @@
 
 from datetime import timedelta
 
-import jwt
+from jose import jwt
 import pytest
 
-from app.models.domain.user import UserInDB
-from app.services.jwt import (
+from app.models.domain.user import User
+from app.services.token import (
     ALGORITHM,
     create_access_token_for_user,
-    create_jwt_token,
-    get_user_id_from_token,
     get_username_from_token,
+    create_access_token,
     get_phone_from_token,
 )
 
 
 def test_creating_jwt_token() -> None:
-    token = create_jwt_token(
-        jwt_content={"content": "payload"},
+    token = create_access_token(
+        data={"content": "payload"},
         secret_key="secret",
         expires_delta=timedelta(minutes=1),
     )
@@ -39,7 +38,8 @@ def test_creating_jwt_token() -> None:
     assert parsed_payload["content"] == "payload"
 
 
-def test_creating_token_for_user(test_user: UserInDB) -> None:
+@pytest.mark.asyncio
+async def test_creating_token_for_user(test_user: User):
     token = create_access_token_for_user(
         user_id=test_user.id,
         username=test_user.username,
@@ -51,16 +51,14 @@ def test_creating_token_for_user(test_user: UserInDB) -> None:
     assert parsed_payload["username"] == test_user.username
 
 
-def test_retrieving_token_from_user(test_user: UserInDB) -> None:
+@pytest.mark.asyncio
+async def test_retrieving_token_from_user(test_user: User):
     token = create_access_token_for_user(
         user_id=test_user.id,
         username=test_user.username,
         phone=test_user.phone,
         secret_key="secret"
     )
-
-    user_id = get_user_id_from_token(token, "secret")
-    assert user_id == test_user.id
 
     username = get_username_from_token(token, "secret")
     assert username == test_user.username
@@ -69,14 +67,14 @@ def test_retrieving_token_from_user(test_user: UserInDB) -> None:
     assert phone == test_user.phone
 
 
-def test_error_when_wrong_token() -> None:
+def test_error_when_wrong_token():
     with pytest.raises(ValueError):
         get_username_from_token("asdf", "asdf")
 
 
-def test_error_when_wrong_token_shape() -> None:
-    token = create_jwt_token(
-        jwt_content={"content": "payload"},
+def test_error_when_wrong_token_shape():
+    token = create_access_token(
+        data={"content": "payload"},
         secret_key="secret",
         expires_delta=timedelta(minutes=1),
     )

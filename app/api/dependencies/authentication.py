@@ -18,14 +18,15 @@ from typing import Callable, Optional
 from fastapi import Depends, HTTPException, Security, requests, status
 from fastapi.security import APIKeyHeader
 from fastapi.exceptions import HTTPException as FastApiHTTPException
+from neo4j import AsyncDriver
 
-from app.api.dependencies.database import get_repository
+from app.api.dependencies.database import get_db_driver
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories import UserRepository
 from app.models.domain.user import User
 from app.resources import strings
-from app.services import jwt
+from app.services.token import get_username_from_token, get_phone_from_token
 
 HEADER_KEY = "Authorization"
 
@@ -74,7 +75,7 @@ async def _get_current_user_username(
     )
 
     try:
-        user_id = jwt.get_username_from_token(token, settings.secret_key.get_secret_value())
+        user_id = get_username_from_token(token, settings.secret_key.get_secret_value())
     except ValueError as exception:
         logger.error(exception)
         raise malformed_payload from exception
@@ -84,11 +85,14 @@ async def _get_current_user_username(
 
 async def _get_current_user(
         username: str = Depends(_get_current_user_username),
-        user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        driver: AsyncDriver = Depends(get_db_driver)
 ) -> User:
-    user: User | None = await user_repository.get_user_by_username(username)
-    if user:
-        return user
+    user_repository: UserRepository = UserRepository()
+
+    with driver.session() as session:
+        user: User | None = await user_repository.get_user_by_username(session, username)
+        if user:
+            return user
 
     logger.error("User not found")
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.MALFORMED_PAYLOAD)

@@ -13,18 +13,19 @@
 #  limitations under the License.
 
 from typing import Optional
+from loguru import logger
 from pyotp import TOTP, random_base32
 from neo4j import AsyncResult, Record
 
-from app.database.repositories.base import BaseRepository
+from app.database.repositories.base_repository import BaseRepository
 
 
 class PhoneRepository(BaseRepository):
 
-    async def create_verification_code(self, phone: str) -> str:
+    async def create_verification_code_by_phone(self, phone: str) -> str:
         query = """
-            MERGE (p:Phone {phone: $phone}) 
-            SET p.secret=$secret
+            MERGE (phone:Phone {number: $phone}) 
+            SET phone.secret=$secret
         """
 
         secret = random_base32()
@@ -38,16 +39,17 @@ class PhoneRepository(BaseRepository):
 
         return verification_code
 
-    async def verify_code(self, phone: str, verification_code: int) -> bool:
+    async def verify_code_by_phone(self, phone: str, verification_code: int) -> bool:
         query = """
-            MATCH (p:Phone {phone: $phone}) 
-            RETURN p.secret AS secret
+            MATCH (phone:Phone {number: $phone}) 
+            RETURN phone.secret AS secret
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)
         record: Optional[Record] = await result.single()
 
         if not record:
+            logger.warning("Query result is empty")
             return False
 
         secret = record["secret"]
@@ -59,10 +61,10 @@ class PhoneRepository(BaseRepository):
 
         return False
 
-    async def is_attached(self, phone: str) -> bool:
+    async def is_attached_by_phone(self, phone: str) -> bool:
         query = """
-            MATCH (p:Phone {phone: $phone})-[:Attached]-() 
-            RETURN p
+            MATCH (phone:Phone {number: $phone})-[:Attached]->() 
+            RETURN phone
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)

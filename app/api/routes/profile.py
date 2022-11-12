@@ -13,9 +13,10 @@
 #  limitations under the License.
 
 from fastapi import APIRouter, Depends, Body
+from neo4j import AsyncDriver
 
 from app.api.dependencies.authentication import get_current_user_authorizer
-from app.api.dependencies.database import get_repository
+from app.api.dependencies.database import get_db_driver
 from app.database.repositories.profile_repository import ProfileRepository
 from app.models.domain.user import User
 from app.models.schemas.profile import ProfileResponse, ProfileUpdate
@@ -34,7 +35,12 @@ async def get_current_user(
 async def update_my_profile(
         profile_update: ProfileUpdate = Body(..., embed=True, alias="profile"),
         user: User = Depends(get_current_user_authorizer()),
-        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
+        driver: AsyncDriver = Depends(get_db_driver),
+
 ) -> ProfileResponse:
-    profile = await profile_repository.update_profile(user.username)
+    profile_repository: ProfileRepository = ProfileRepository()
+
+    with driver.session() as session:
+        profile = await profile_repository.update_profile(session, user.username)
+
     return ProfileResponse(profile=profile)
