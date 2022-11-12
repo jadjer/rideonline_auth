@@ -12,19 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
-from pydantic import HttpUrl, BaseModel
+from pydantic import BaseModel
 
-from app.models.domain.profile import Gender, Profile
+from app.models.domain.profile import Profile
 
 
 class ProfileUpdate(BaseModel):
-    first_name: Optional[str] = None
-    second_name: Optional[str] = None
-    last_name: Optional[str] = None
-    gender: Optional[Gender] = Gender.UNDEFINED
-    age: Optional[int] = None
-    image: Optional[HttpUrl] = None
+    profile: Profile
 
 
 class ProfileResponse(BaseModel):

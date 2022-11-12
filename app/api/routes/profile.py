@@ -12,35 +12,38 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import APIRouter, Depends, Body
-from neo4j import AsyncDriver
+from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.api.dependencies.authentication import get_current_user_authorizer
-from app.api.dependencies.database import get_db_driver
+from app.api.dependencies.database import get_repository
 from app.database.repositories.profile_repository import ProfileRepository
 from app.models.domain.user import User
 from app.models.schemas.profile import ProfileResponse, ProfileUpdate
+from app.resources import strings
 
 router = APIRouter()
 
 
-@router.get("", response_model=ProfileResponse, name="user:get")
-async def get_current_user(
+@router.get("", status_code=status.HTTP_200_OK, name="profile:get")
+async def get_profile(
         user: User = Depends(get_current_user_authorizer()),
+        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
 ) -> ProfileResponse:
-    return ProfileResponse(user=user)
+    profile = await profile_repository.get_profile(user.username)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PROFILE_DOES_NOT_EXISTS)
+
+    return ProfileResponse(profile=profile)
 
 
-@router.patch("", response_model=ProfileResponse, name="user:update")
-async def update_my_profile(
-        profile_update: ProfileUpdate = Body(..., embed=True, alias="profile"),
+@router.patch("", status_code=status.HTTP_200_OK, name="profile:update")
+async def update_profile(
+        profile_update: ProfileUpdate = Body(..., alias="profile"),
         user: User = Depends(get_current_user_authorizer()),
-        driver: AsyncDriver = Depends(get_db_driver),
-
+        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
 ) -> ProfileResponse:
-    profile_repository: ProfileRepository = ProfileRepository()
-
-    with driver.session() as session:
-        profile = await profile_repository.update_profile(session, user.username)
+    profile = await profile_repository.update_profile(user.username, **profile_update.profile.__dict__)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
     return ProfileResponse(profile=profile)

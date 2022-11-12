@@ -16,13 +16,9 @@ from typing import Callable, Type
 
 from fastapi import Depends
 from fastapi.requests import Request
-from neo4j import AsyncSession, AsyncDriver
+from neo4j import AsyncSession
 
 from app.database.repositories.base_repository import BaseRepository
-
-
-def get_db_driver(request: Request) -> AsyncDriver:
-    return request.app.state.driver
 
 
 def _get_db_session(request: Request) -> AsyncSession:
