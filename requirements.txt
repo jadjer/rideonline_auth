@@ -11,3 +11,4 @@ neo4j
 pyotp
 pika
 bcrypt
+passlib
