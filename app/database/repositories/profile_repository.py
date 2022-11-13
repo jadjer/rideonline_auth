@@ -25,8 +25,8 @@ class ProfileRepository(BaseRepository):
 
     async def get_profile_by_id(self, user_id: int) -> Optional[Profile]:
         query = f"""
-            MATCH (user:User) 
-            WHERE id(user) = {user_id} 
+            MATCH (user:User)
+            WHERE id(user) = {user_id}
             RETURN user
         """
         result: AsyncResult = await self.session.run(query)
@@ -48,8 +48,8 @@ class ProfileRepository(BaseRepository):
 
     async def get_profile_by_username(self, username: str) -> Optional[Profile]:
         query = f"""
-            MATCH (user:User) 
-            WHERE user.username = "{username}" 
+            MATCH (user:User)
+            WHERE user.username = "{username}"
             RETURN user
         """
         result: AsyncResult = await self.session.run(query)
@@ -92,15 +92,15 @@ class ProfileRepository(BaseRepository):
         profile.image = image or profile.image
 
         query = f"""
-            MATCH (user:User) 
-            WHERE id(user) = {user_id} 
-            SET user.first_name = $first_name 
-            SET user.last_name = $last_name 
-            SET user.age = $age 
-            SET user.gender = $gender 
-            SET user.country = $country 
-            SET user.region = $region 
-            SET user.image = $image 
+            MATCH (user:User)
+            WHERE id(user) = {user_id}
+            SET user.first_name = $first_name
+            SET user.last_name = $last_name
+            SET user.age = $age
+            SET user.gender = $gender
+            SET user.country = $country
+            SET user.region = $region
+            SET user.image = $image
             RETURN user
         """
 

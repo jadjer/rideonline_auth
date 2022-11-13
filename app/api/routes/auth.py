@@ -16,8 +16,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
-from app.database.repositories import UserRepository, PhoneRepository
-from app.models.domain.user import UserInDB, User
+from app.database.repositories.phone_repository import PhoneRepository
+from app.database.repositories.user_repository import UserRepository
+from app.models.domain.user import User
 from app.models.schemas.user import (
     UserCreate,
     UserLogin,

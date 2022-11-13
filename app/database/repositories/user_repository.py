@@ -11,8 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Optional
 
+from typing import Optional
 from loguru import logger
 
 from neo4j import Record, AsyncResult
@@ -26,9 +26,9 @@ class UserRepository(BaseRepository):
 
     async def create_user_by_phone(self, phone: str, *, username: str, password: str, **kwargs) -> Optional[UserInDB]:
         query = """
-            MERGE (phone:Phone { number: $phone }) 
-            CREATE (user:User { username: $username, password: $password, salt: $salt, is_blocked: $is_blocked }) 
-            CREATE (phone)-[:Attached]->(user) 
+            MERGE (phone:Phone { number: $phone })
+            CREATE (user:User { username: $username, password: $password, salt: $salt, is_blocked: $is_blocked })
+            CREATE (phone)-[:Attached]->(user)
             RETURN id(user) AS user_id, user, phone
         """
 
@@ -53,7 +53,7 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_id(self, user_id: int) -> Optional[UserInDB]:
         query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User) 
+            MATCH (phone:Phone)-[:Attached]->(user:User)
             WHERE id(user) = {user_id}
             RETURN user, phone
         """
@@ -77,8 +77,8 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_username(self, username: str) -> Optional[UserInDB]:
         query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User) 
-            WHERE user.username = "{username}" 
+            MATCH (phone:Phone)-[:Attached]->(user:User)
+            WHERE user.username = "{username}"
             RETURN id(user) AS user_id, user, phone
         """
 
@@ -126,11 +126,11 @@ class UserRepository(BaseRepository):
             user.change_password(password)
 
         query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User) 
-            WHERE id(user) = {user_id} 
-            SET user.username = $username 
-            SET user.salt = $salt 
-            SET user.password = $password 
+            MATCH (phone:Phone)-[:Attached]->(user:User)
+            WHERE id(user) = {user_id}
+            SET user.username = $username
+            SET user.salt = $salt
+            SET user.password = $password
             SET phone.number = $phone
         """
 

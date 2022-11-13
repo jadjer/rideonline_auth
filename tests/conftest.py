@@ -20,9 +20,10 @@ from httpx import AsyncClient
 from neo4j import AsyncDriver, AsyncSession, AsyncTransaction
 
 from app.core.settings.app import AppSettings
-from app.database import UserRepository, ProfileRepository
-from app.models import User, Profile
-from app.models.domain.profile import Gender
+from app.database.repositories.user_repository import UserRepository
+from app.database.repositories.profile_repository import ProfileRepository
+from app.models.domain.user import User
+from app.models.domain.profile import Gender, Profile
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def settings() -> AppSettings:
 
 @pytest.fixture
 def app() -> FastAPI:
-    from app import get_application
+    from app.app import get_application
     return get_application()
 
 
@@ -99,7 +100,7 @@ def authorization_prefix(settings: AppSettings) -> str:
 
 @pytest.fixture
 def token(settings: AppSettings, test_user: User) -> str:
-    from app.services import create_access_token_for_user
+    from app.services.token import create_access_token_for_user
 
     return create_access_token_for_user(
         test_user.id, test_user.username, test_user.phone, settings.secret_key.get_secret_value()

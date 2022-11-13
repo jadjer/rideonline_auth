@@ -14,7 +14,7 @@
 
 from pydantic import BaseModel
 
-from app.models import User
+from app.models.domain.user import User
 from app.models.domain.profile import Profile
 
 

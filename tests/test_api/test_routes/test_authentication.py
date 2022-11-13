@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.services import create_access_token_for_user
+from app.services.token import create_access_token_for_user
 
 
 @pytest.mark.asyncio

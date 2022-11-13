@@ -22,7 +22,7 @@ from fastapi.exceptions import HTTPException as FastApiHTTPException
 from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
-from app.database.repositories import UserRepository
+from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
 from app.resources import strings
 from app.services.token import get_user_id_from_token

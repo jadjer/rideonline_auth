@@ -11,7 +11,3 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-from .settings import AppSettings
-from .config import get_app_settings
-from .events import create_start_app_handler, create_stop_app_handler

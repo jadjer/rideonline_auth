@@ -24,7 +24,7 @@ class PhoneRepository(BaseRepository):
 
     async def create_verification_code_by_phone(self, phone: str) -> str:
         query = """
-            MERGE (phone:Phone {number: $phone}) 
+            MERGE (phone:Phone {number: $phone})
             SET phone.secret=$secret
         """
 
@@ -41,8 +41,8 @@ class PhoneRepository(BaseRepository):
 
     async def verify_code_by_phone(self, phone: str, verification_code: int) -> bool:
         query = f"""
-            MATCH (phone:Phone) 
-            WHERE phone.number = "{phone}" 
+            MATCH (phone:Phone)
+            WHERE phone.number = "{phone}"
             RETURN phone.secret AS secret
         """
 
@@ -64,7 +64,7 @@ class PhoneRepository(BaseRepository):
 
     async def is_attached_by_phone(self, phone: str) -> bool:
         query = """
-            MATCH (phone:Phone {number: $phone})-[:Attached]->() 
+            MATCH (phone:Phone {number: $phone})-[:Attached]->()
             RETURN phone
         """
 

@@ -17,7 +17,8 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.database.repositories import UserRepository, PhoneRepository
+from app.database.repositories.user_repository import UserRepository
+from app.database.repositories.phone_repository import PhoneRepository
 from app.models.domain.user import User
 
 

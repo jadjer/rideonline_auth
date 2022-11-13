@@ -16,7 +16,8 @@ from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
-from app.database import UserRepository, PhoneRepository
+from app.database.repositories.user_repository import UserRepository
+from app.database.repositories.phone_repository import PhoneRepository
 from app.models.domain.user import User, UserInDB
 from app.models.schemas.user import UserResponse, UserUpdate
 from app.resources import strings
