@@ -44,6 +44,15 @@ def create_access_token_for_user(user_id: int, username: str, phone: str, secret
     )
 
 
+def get_user_id_from_token(token: str, secret_key: str) -> int:
+    try:
+        return JWTUser(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).user_id
+    except JWTError as decode_error:
+        raise ValueError("unable to decode JWT token") from decode_error
+    except ValidationError as validation_error:
+        raise ValueError("malformed payload in token") from validation_error
+
+
 def get_username_from_token(token: str, secret_key: str) -> str:
     try:
         return JWTUser(**jwt.decode(token, secret_key, algorithms=[ALGORITHM])).username

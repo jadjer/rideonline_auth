@@ -14,9 +14,10 @@
 
 from fastapi import APIRouter
 
-from . import authentication, profile
+from . import auth, profiles, user
 
 router = APIRouter()
 
-router.include_router(authentication.router, tags=["authentication"], prefix="/auth")
-router.include_router(profile.router, tags=["profile"], prefix="/profile")
+router.include_router(auth.router, tags=["auth"], prefix="/auth")
+router.include_router(user.router, tags=["user"], prefix="/user")
+router.include_router(profiles.router, tags=["profiles"], prefix="/profiles")

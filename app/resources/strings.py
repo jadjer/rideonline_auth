@@ -14,14 +14,10 @@
 
 USER_CREATE_ERROR = "User create error"
 
-USER_DOES_NOT_EXIST_ERROR = "user does not exist"
-USER_IS_NOT_AUTHOR_OF_POST = "You are not an author of this post"
-USER_IS_NOT_AUTHOR_OF_EVENT = "You are not an author of this event"
-
+USER_DOES_NOT_EXIST_ERROR = "User does not exist"
 PROFILE_DOES_NOT_EXISTS = "Profile does not exists"
 
 INCORRECT_LOGIN_INPUT = "incorrect username or password"
-PHONE_TAKEN = "User with this phone already exists"
 USERNAME_TAKEN = "User with this username already exists"
 EMAIL_TAKEN = "User with this email already exists"
 PHONE_NUMBER_TAKEN = "User with this phone already exists"

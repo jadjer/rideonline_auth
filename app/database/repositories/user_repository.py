@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import Optional
 
 from loguru import logger
 
@@ -23,7 +24,7 @@ from app.models.domain.user import User, UserInDB
 
 class UserRepository(BaseRepository):
 
-    async def create_user(self, username: str, phone: str, password: str) -> User | None:
+    async def create_user_by_phone(self, phone: str, *, username: str, password: str, **kwargs) -> Optional[UserInDB]:
         query = """
             MERGE (phone:Phone { number: $phone }) 
             CREATE (user:User { username: $username, password: $password, salt: $salt, is_blocked: $is_blocked }) 
@@ -34,14 +35,7 @@ class UserRepository(BaseRepository):
         user = UserInDB(username=username, phone=phone)
         user.change_password(password)
 
-        result: AsyncResult = await self.session.run(
-            query,
-            phone=phone,
-            username=user.username,
-            password=user.password,
-            salt=user.salt,
-            is_blocked=user.is_blocked
-        )
+        result: AsyncResult = await self.session.run(query, user.dict())
 
         try:
             record: Record | None = await result.single()
@@ -57,13 +51,38 @@ class UserRepository(BaseRepository):
 
         return user
 
-    async def get_user_by_username(self, username: str) -> UserInDB | None:
-        query = """
-            MATCH (phone:Phone)-[:Attached]->(user:User {username: $username}) 
+    async def get_user_by_id(self, user_id: int) -> Optional[UserInDB]:
+        query = f"""
+            MATCH (phone:Phone)-[:Attached]->(user:User) 
+            WHERE id(user) = {user_id}
+            RETURN user, phone
+        """
+
+        result: AsyncResult = await self.session.run(query)
+        record: Record | None = await result.single()
+
+        if not record:
+            return None
+
+        user = UserInDB(
+            id=user_id,
+            phone=record["phone"]["number"],
+            username=record["user"]["username"],
+            password=record["user"]["password"],
+            salt=record["user"]["salt"],
+            is_blocked=record["user"]["is_blocked"],
+        )
+
+        return user
+
+    async def get_user_by_username(self, username: str) -> Optional[UserInDB]:
+        query = f"""
+            MATCH (phone:Phone)-[:Attached]->(user:User) 
+            WHERE user.username = "{username}" 
             RETURN id(user) AS user_id, user, phone
         """
 
-        result: AsyncResult = await self.session.run(query, username=username)
+        result: AsyncResult = await self.session.run(query)
         record: Record | None = await result.single()
 
         if not record:
@@ -72,7 +91,7 @@ class UserRepository(BaseRepository):
         user = UserInDB(
             id=record["user_id"],
             phone=record["phone"]["number"],
-            username=record["user"]["username"],
+            username=username,
             password=record["user"]["password"],
             salt=record["user"]["salt"],
             is_blocked=record["user"]["is_blocked"],
@@ -86,3 +105,35 @@ class UserRepository(BaseRepository):
             return True
 
         return False
+
+    async def update_user_by_user_id(
+            self,
+            user_id: int,
+            *,
+            username: Optional[str] = None,
+            phone: Optional[str] = None,
+            password: Optional[str] = None,
+            **kwargs
+    ) -> Optional[UserInDB]:
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return user
+
+        user.username = username or user.username
+        user.phone = phone or user.phone
+
+        if password:
+            user.change_password(password)
+
+        query = f"""
+            MATCH (phone:Phone)-[:Attached]->(user:User) 
+            WHERE id(user) = {user_id} 
+            SET user.username = $username 
+            SET user.salt = $salt 
+            SET user.password = $password 
+            SET phone.number = $phone
+        """
+
+        await self.session.run(query, user.__dict__)
+
+        return await self.get_user_by_id(user_id)

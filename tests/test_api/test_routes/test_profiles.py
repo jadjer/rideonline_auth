@@ -17,184 +17,68 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
-from app.database.repositories import UserRepository
 from app.models.domain.profile import Profile
+from app.models.domain.user import User
+from app.models.schemas.profile import ProfileResponse
 
 
-# async def test_unregistered_user_will_receive_profile(
-#     app: FastAPI, client: AsyncClient, test_profile: Profile
-# ) -> None:
-#     response = await client.get(
-#         app.url_path_for("profiles:get-profile", user_id=str(test_profile.user_id))
-#     )
-#     profile = UserInResponse(**response.json())
-#     assert profile.user..username == test_user.username
+@pytest.mark.asyncio
+async def test_unregistered_user_will_receive_profile(
+        initialized_app: FastAPI, client: AsyncClient, test_user: User, test_profile: Profile
+) -> None:
+
+    response = await client.get(
+        initialized_app.url_path_for("profiles:get-profile-by-id", user_id=test_user.id)
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    profile = ProfileResponse(**response.json())
+    assert profile.user.id == test_user.id
+    assert profile.user.username == test_user.username
+    assert profile.user.phone == test_user.phone
+    assert profile.profile.first_name == test_profile.first_name
+    assert profile.profile.last_name == test_profile.last_name
+    assert profile.profile.age == test_profile.age
+    assert profile.profile.gender == test_profile.gender
 
 
-# async def test_unregistered_user_will_receive_profile_without_following(
-#     app: FastAPI, client: AsyncClient, test_user: UserInDB
-# ) -> None:
-#     response = await client.get(
-#         app.url_path_for("profiles:get-profile", username=test_user.username)
-#     )
-#     profile = UserInResponse(**response.json())
-#     assert profile.profile.username == test_user.username
-#     assert not profile.profile.following
+@pytest.mark.asyncio
+async def test_unregistered_user_can_not_retrieve_not_existing_profile(
+        initialized_app: FastAPI, client: AsyncClient
+) -> None:
+
+    response = await client.get(
+        initialized_app.url_path_for("profiles:get-profile-by-id", user_id=999999999999)
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-# async def test_user_that_does_not_follows_another_will_receive_profile_without_follow(
-#     app: FastAPI, authorized_client: AsyncClient, pool: Pool
-# ) -> None:
-#     async with pool.acquire() as conn:
-#         users_repo = UsersRepository(conn)
-#         user = await users_repo.create_user(
-#             username="user_for_following",
-#             email="test-for-following@email.com",
-#             password="password",
-#         )
-#
-#     response = await authorized_client.get(
-#         app.url_path_for("profiles:get-profile", username=user.username)
-#     )
-#     profile = UserInResponse(**response.json())
-#     assert profile.profile.username == user.username
-#     assert not profile.profile.following
+@pytest.mark.asyncio
+async def test_user_will_receive_profile(
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, test_profile: Profile
+) -> None:
+
+    response = await authorized_client.get(
+        initialized_app.url_path_for("profiles:get-profile-by-id", user_id=test_user.id)
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    profile = ProfileResponse(**response.json())
+    assert profile.user.id == test_user.id
+    assert profile.user.username == test_user.username
+    assert profile.user.phone == test_user.phone
+    assert profile.profile.first_name == test_profile.first_name
+    assert profile.profile.last_name == test_profile.last_name
+    assert profile.profile.age == test_profile.age
+    assert profile.profile.gender == test_profile.gender
 
 
-# async def test_user_that_follows_another_will_receive_profile_with_follow(
-#     app: FastAPI, authorized_client: AsyncClient, pool: Pool, test_user: UserInDB
-# ) -> None:
-#     async with pool.acquire() as conn:
-#         users_repo = UsersRepository(conn)
-#         user = await users_repo.create_user(
-#             username="user_for_following",
-#             email="test-for-following@email.com",
-#             password="password",
-#         )
-#
-#         profiles_repo = UsersRepository(conn)
-#         await profiles_repo.add_user_into_followers(
-#             target_user=user, requested_user=test_user
-#         )
-#
-#     response = await authorized_client.get(
-#         app.url_path_for("profiles:get-profile", username=user.username)
-#     )
-#     profile = UserInResponse(**response.json())
-#     assert profile.profile.username == user.username
-#     assert profile.profile.following
+@pytest.mark.asyncio
+async def test_user_can_not_retrieve_not_existing_profile(
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, test_profile: Profile
+) -> None:
 
-
-# @pytest.mark.parametrize(
-#     "api_method, route_name",
-#     (
-#         ("GET", "profiles:get-profile"),
-#         ("POST", "profiles:follow-user"),
-#         ("DELETE", "profiles:unsubscribe-from-user"),
-#     ),
-# )
-# async def test_user_can_not_retrieve_not_existing_profile(
-#     app: FastAPI, authorized_client: AsyncClient, api_method: str, route_name: str
-# ) -> None:
-#     response = await authorized_client.request(
-#         api_method, app.url_path_for(route_name, username="not_existing_user")
-#     )
-#     assert response.status_code == status.HTTP_404_NOT_FOUND
-
-
-# @pytest.mark.parametrize(
-#     "api_method, route_name, following",
-#     (
-#         ("POST", "profiles:follow-user", True),
-#         ("DELETE", "profiles:unsubscribe-from-user", False),
-#     ),
-# )
-# async def test_user_can_change_following_for_another_user(
-#     app: FastAPI,
-#     authorized_client: AsyncClient,
-#     pool: Pool,
-#     test_user: UserInDB,
-#     api_method: str,
-#     route_name: str,
-#     following: bool,
-# ) -> None:
-#     async with pool.acquire() as conn:
-#         users_repo = UsersRepository(conn)
-#         user = await users_repo.create_user(
-#             username="user_for_following",
-#             email="test-for-following@email.com",
-#             password="password",
-#         )
-#
-#         if not following:
-#             profiles_repo = UsersRepository(conn)
-#             await profiles_repo.add_user_into_followers(
-#                 target_user=user, requested_user=test_user
-#             )
-#
-#     change_following_response = await authorized_client.request(
-#         api_method, app.url_path_for(route_name, username=user.username)
-#     )
-#     assert change_following_response.status_code == status.HTTP_200_OK
-#
-#     response = await authorized_client.get(
-#         app.url_path_for("profiles:get-profile", username=user.username)
-#     )
-#     profile = UserInResponse(**response.json())
-#     assert profile.profile.username == user.username
-#     assert profile.profile.following == following
-
-
-# @pytest.mark.parametrize(
-#     "api_method, route_name, following",
-#     (
-#         ("POST", "profiles:follow-user", True),
-#         ("DELETE", "profiles:unsubscribe-from-user", False),
-#     ),
-# )
-# async def test_user_can_not_change_following_state_to_the_same_twice(
-#     app: FastAPI,
-#     authorized_client: AsyncClient,
-#     pool: Pool,
-#     test_user: UserInDB,
-#     api_method: str,
-#     route_name: str,
-#     following: bool,
-# ) -> None:
-#     async with pool.acquire() as conn:
-#         users_repo = UsersRepository(conn)
-#         user = await users_repo.create_user(
-#             username="user_for_following",
-#             email="test-for-following@email.com",
-#             password="password",
-#         )
-#
-#         if following:
-#             profiles_repo = UsersRepository(conn)
-#             await profiles_repo.add_user_into_followers(
-#                 target_user=user, requested_user=test_user
-#             )
-#
-#     response = await authorized_client.request(
-#         api_method, app.url_path_for(route_name, username=user.username)
-#     )
-#
-#     assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-
-# @pytest.mark.parametrize(
-#     "api_method, route_name",
-#     (("POST", "profiles:follow-user"), ("DELETE", "profiles:unsubscribe-from-user")),
-# )
-# async def test_user_can_not_change_following_state_for_him_self(
-#     app: FastAPI,
-#     authorized_client: AsyncClient,
-#     test_user: UserInDB,
-#     api_method: str,
-#     route_name: str,
-# ) -> None:
-#     response = await authorized_client.request(
-#         api_method, app.url_path_for(route_name, username=test_user.username)
-#     )
-#
-#     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response = await authorized_client.get(
+        initialized_app.url_path_for("profiles:get-profile-by-id", user_id=999999999999)
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND

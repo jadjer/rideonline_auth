@@ -14,6 +14,7 @@
 
 from pydantic import BaseModel
 
+from app.models import User
 from app.models.domain.profile import Profile
 
 
@@ -22,4 +23,5 @@ class ProfileUpdate(BaseModel):
 
 
 class ProfileResponse(BaseModel):
+    user: User
     profile: Profile

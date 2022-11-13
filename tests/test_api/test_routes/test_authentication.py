@@ -25,7 +25,7 @@ async def test_unable_to_login_with_wrong_jwt_prefix(
         app: FastAPI, client: AsyncClient, token: str
 ) -> None:
     response = await client.get(
-        app.url_path_for("user:get"),
+        app.url_path_for("user:get-user"),
         headers={"Authorization": f"WrongPrefix {token}"},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -42,7 +42,7 @@ async def test_unable_to_login_when_user_does_not_exist_any_more(
         secret_key="secret",
     )
     response = await client.get(
-        app.url_path_for("user:get"),
+        app.url_path_for("user:get-user"),
         headers={"Authorization": f"{authorization_prefix} {token}"},
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN

@@ -11,9 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+from typing import Optional
 
 from pydantic import BaseModel
 
+from app.models.domain.token import Token
 from app.models.domain.user import User
 
 
@@ -33,25 +35,17 @@ class UserCreate(BaseModel):
     verification_code: int
 
 
-class UserChangeUsername(BaseModel):
-    username: str
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    phone: Optional[str] = None
+    password: Optional[str] = None
     verification_code: int
-
-
-class UserChangePhone(BaseModel):
-    phone: str
-    verification_code: int
-
-
-class Token(BaseModel):
-    token_access: str
-    token_refresh: str
 
 
 class UserResponse(BaseModel):
     user: User
 
 
-class UserResponseWithToken(BaseModel):
+class UserWithTokenResponse(BaseModel):
     user: User
     token: Token

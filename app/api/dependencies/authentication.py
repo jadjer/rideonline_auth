@@ -23,9 +23,9 @@ from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories import UserRepository
-from app.models.domain.user import User
+from app.models.domain.user import UserInDB
 from app.resources import strings
-from app.services.token import get_username_from_token
+from app.services.token import get_user_id_from_token
 
 HEADER_KEY = "Authorization"
 
@@ -47,48 +47,38 @@ def _get_authorization_header(
         api_key: str = Security(MyApiKeyHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> str:
-    wrong_token_prefix = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail=strings.WRONG_TOKEN_PREFIX
-    )
-
     try:
         token_prefix, token = api_key.split(" ")
     except ValueError as exception:
         logger.error(exception)
-        raise wrong_token_prefix from exception
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.WRONG_TOKEN_PREFIX)
 
     if token_prefix != settings.jwt_token_prefix:
-        raise wrong_token_prefix
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.WRONG_TOKEN_PREFIX)
 
     return token
 
 
-async def _get_current_user_username(
+async def _get_user_id_from_token(
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
-) -> str:
-    malformed_payload = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail=strings.MALFORMED_PAYLOAD
-    )
-
+) -> int:
     try:
-        user_id = get_username_from_token(token, settings.secret_key.get_secret_value())
+        user_id = get_user_id_from_token(token, settings.secret_key.get_secret_value())
     except ValueError as exception:
         logger.error(exception)
-        raise malformed_payload from exception
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.MALFORMED_PAYLOAD)
 
     return user_id
 
 
 async def _get_current_user(
-        username: str = Depends(_get_current_user_username),
+        user_id: int = Depends(_get_user_id_from_token),
         user_repository: UserRepository = Depends(get_repository(UserRepository))
-) -> User:
-    user = await user_repository.get_user_by_username(username)
-    if user:
-        return user
+) -> UserInDB:
+    user = await user_repository.get_user_by_id(user_id)
+    if not user:
+        logger.error(f"User with ID {user_id} doesn't found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
-    logger.error("User not found")
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.MALFORMED_PAYLOAD)
+    return user

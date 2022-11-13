@@ -20,8 +20,9 @@ from httpx import AsyncClient
 from neo4j import AsyncDriver, AsyncSession, AsyncTransaction
 
 from app.core.settings.app import AppSettings
-from app.database import UserRepository, ProfileRepository, PhoneRepository
+from app.database import UserRepository, ProfileRepository
 from app.models import User, Profile
+from app.models.domain.profile import Gender
 
 
 @pytest.fixture
@@ -84,7 +85,7 @@ async def client(app: FastAPI) -> AsyncClient:
 async def test_user(session) -> User:
     user_repository = UserRepository(session)
 
-    user = await user_repository.create_user(username="username", phone="+375257654321", password="password")
+    user = await user_repository.create_user_by_phone("+375257654321", username="username", password="password")
     if not user:
         pytest.raises(Exception)
 
@@ -97,10 +98,12 @@ def authorization_prefix(settings: AppSettings) -> str:
 
 
 @pytest.fixture
-def token(test_user: User) -> str:
+def token(settings: AppSettings, test_user: User) -> str:
     from app.services import create_access_token_for_user
 
-    return create_access_token_for_user(test_user.id, test_user.username, test_user.phone, "secret_key")
+    return create_access_token_for_user(
+        test_user.id, test_user.username, test_user.phone, settings.secret_key.get_secret_value()
+    )
 
 
 @pytest.fixture
@@ -110,6 +113,12 @@ def authorized_client(client: AsyncClient, authorization_prefix: str, token: str
 
 
 @pytest_asyncio.fixture
-async def profile(session, test_user: User) -> Profile:
+async def test_profile(session, test_user: User) -> Profile:
     profile_repository = ProfileRepository(session)
-    return await profile_repository.update_profile(test_user.username)
+    return await profile_repository.update_profile(
+        test_user.id,
+        first_name="Test",
+        last_name="User",
+        age=18,
+        gender=Gender.male,
+    )

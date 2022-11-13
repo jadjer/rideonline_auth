@@ -35,17 +35,18 @@ class PhoneRepository(BaseRepository):
         otp = TOTP(secret)
         verification_code = otp.now()
 
-        print(f"Code: {verification_code}")
+        print(f"Code: {verification_code} for {phone}")
 
         return verification_code
 
     async def verify_code_by_phone(self, phone: str, verification_code: int) -> bool:
-        query = """
-            MATCH (phone:Phone {number: $phone}) 
+        query = f"""
+            MATCH (phone:Phone) 
+            WHERE phone.number = "{phone}" 
             RETURN phone.secret AS secret
         """
 
-        result: AsyncResult = await self.session.run(query, phone=phone)
+        result: AsyncResult = await self.session.run(query)
         record: Optional[Record] = await result.single()
 
         if not record:
