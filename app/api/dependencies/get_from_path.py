@@ -12,16 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime
-from pydantic import BaseModel
+from fastapi import Path
 
 
-class JWTMeta(BaseModel):
-    exp: datetime
-    sub: str
-
-
-class JWTUser(BaseModel):
-    user_id: int
-    phone: str
-    username: str
+def get_user_id_from_path(user_id: int = Path(..., ge=1)) -> int:
+    return user_id

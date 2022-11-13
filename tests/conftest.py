@@ -13,195 +13,113 @@
 #  limitations under the License.
 
 import pytest
+import pytest_asyncio
 
-from datetime import datetime, timezone
 from fastapi import FastAPI
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    create_async_engine,
-    AsyncEngine
-)
-from sqlalchemy.orm import sessionmaker
+from neo4j import AsyncDriver, AsyncSession, AsyncTransaction
 
 from app.core.settings.app import AppSettings
-from app.database.repositories import UsersRepository
-from app.database.repositories.events import EventsRepository
-from app.database.repositories.locations import LocationsRepository
-from app.database.repositories.posts import PostsRepository
-from app.database.repositories.services_types import ServicesTypesRepository
-from app.database.repositories.vehicles import VehiclesRepository
-from app.models.domain.event import Event
-from app.models.domain.location import Location
-from app.models.domain.post import Post
-from app.models.domain.service_type import ServiceType
+from app.database.repositories.user_repository import UserRepository
+from app.database.repositories.profile_repository import ProfileRepository
 from app.models.domain.user import User
-from app.models.domain.vehicle import Vehicle
-from app.services import jwt
+from app.models.domain.profile import Gender, Profile
 
 
 @pytest.fixture
 def settings() -> AppSettings:
     from app.core.config import get_app_settings
-
     return get_app_settings()
 
 
 @pytest.fixture
 def app() -> FastAPI:
-    from app.main import get_application  # local import for testing purpose
-
+    from app.app import get_application
     return get_application()
 
 
 @pytest.fixture
-async def engine(settings: AppSettings) -> AsyncEngine:
-    engine = create_async_engine(settings.get_database_url)
+def driver(settings: AppSettings) -> AsyncDriver:
+    from neo4j import AsyncGraphDatabase
 
-    return engine
+    driver: AsyncDriver = AsyncGraphDatabase.driver(
+        settings.get_database_url,
+        auth=(
+            settings.database_user,
+            settings.database_pass
+        )
+    )
+
+    return driver
 
 
-@pytest.fixture
-async def session(engine: AsyncEngine) -> AsyncSession:
-    connection = await engine.connect()
-    transaction = await connection.begin()
-
-    async_session = sessionmaker(connection, expire_on_commit=False, class_=AsyncSession)
-    session = async_session()
+@pytest_asyncio.fixture
+async def session(driver: AsyncDriver):
+    session: AsyncSession = driver.session()
+    transaction: AsyncTransaction = await session.begin_transaction()
 
     try:
-        yield session
+        yield transaction
 
     finally:
-        await session.close()
         await transaction.rollback()
-        await connection.close()
+        await session.close()
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI, session: AsyncSession) -> FastAPI:
+def initialized_app(app: FastAPI, session) -> FastAPI:
     app.state.session = session
-
     return app
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(app: FastAPI) -> AsyncClient:
     async with AsyncClient(
             app=app,
-            base_url="http://localhost:10000",
+            base_url="http://localhost:12345",
             headers={"Content-Type": "application/json"},
     ) as client:
         yield client
 
 
-@pytest.fixture
-async def test_user(session: AsyncSession) -> User:
-    users_repo = UsersRepository(session)
+@pytest_asyncio.fixture
+async def test_user(session) -> User:
+    user_repository = UserRepository(session)
 
-    user: User = await users_repo.create_user(
-        username="username",
-        phone="+375257654321",
-        password="password",
-    )
+    user = await user_repository.create_user_by_phone("+375257654321", username="username", password="password")
+    if not user:
+        pytest.raises(Exception)
 
     return user
 
 
 @pytest.fixture
 def authorization_prefix(settings: AppSettings) -> str:
-    jwt_token_prefix = settings.jwt_token_prefix
-
-    return jwt_token_prefix
+    return settings.jwt_token_prefix
 
 
 @pytest.fixture
-def token(test_user: User) -> str:
-    return jwt.create_access_token_for_user(
-        user_id=test_user.id,
-        username=test_user.username,
-        phone=test_user.phone,
-        secret_key="secret_key"
+def token(settings: AppSettings, test_user: User) -> str:
+    from app.services.token import create_access_token_for_user
+
+    return create_access_token_for_user(
+        test_user.id, test_user.username, test_user.phone, settings.secret_key.get_secret_value()
     )
 
 
 @pytest.fixture
 def authorized_client(client: AsyncClient, authorization_prefix: str, token: str) -> AsyncClient:
-    client.headers = {
-        "Authorization": f"{authorization_prefix} {token}",
-        **client.headers,
-    }
+    client.headers = {"Authorization": f"{authorization_prefix} {token}", **client.headers}
     return client
 
 
-# @pytest.fixture
-# async def test_profile(test_user: User, session: AsyncSession) -> Profile:
-#     profiles_repo = ProfilesRepository(session)
-#
-#     return await profiles_repo.create_profile_by_user_id(
-#         test_user.id,
-#     )
-
-
-@pytest.fixture
-async def test_location(session: AsyncSession) -> Location:
-    locations_repo = LocationsRepository(session)
-
-    return await locations_repo.create_location(
-        description="Test location",
-        latitude=1.234,
-        longitude=5.678,
-    )
-
-
-@pytest.fixture
-async def test_post(test_user: User, session: AsyncSession) -> Post:
-    posts_repo = PostsRepository(session)
-
-    return await posts_repo.create_post_by_user_id(
+@pytest_asyncio.fixture
+async def test_profile(session, test_user: User) -> Profile:
+    profile_repository = ProfileRepository(session)
+    return await profile_repository.update_profile(
         test_user.id,
-        title="Test post",
-        description="Slug for tests",
-        thumbnail="",
-        body="Test " * 100,
+        first_name="Test",
+        last_name="User",
+        age=18,
+        gender=Gender.male,
     )
-
-
-@pytest.fixture
-async def test_event(session: AsyncSession, test_user: User, test_location: Location) -> Event:
-    events_repo = EventsRepository(session)
-
-    return await events_repo.create_event_by_user_id(
-        test_user.id,
-        title="Test event",
-        description="Test event",
-        thumbnail="",
-        body="Test " * 100,
-        started_at=datetime.now().replace(tzinfo=timezone.utc),
-        location=test_location
-    )
-
-
-@pytest.fixture
-async def test_vehicle(session: AsyncSession, test_user: User) -> Vehicle:
-    vehicles_repo = VehiclesRepository(session)
-
-    return await vehicles_repo.create_vehicle_by_user_id(
-        test_user.id,
-        brand="honda",
-        model="xl1000v",
-        gen=3,
-        year=2008,
-        color="Silver",
-        mileage=65500,
-        vin="JVM01234567891011",
-        registration_plate="9112AB2",
-        name="Bullfinch",
-    )
-
-
-@pytest.fixture
-async def test_service_type(session: AsyncSession) -> ServiceType:
-    services_types_repo = ServicesTypesRepository(session)
-
-    return await services_types_repo.create_service_type("Test service", "Test service in description")

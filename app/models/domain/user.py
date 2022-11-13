@@ -17,9 +17,8 @@ from app.services import security
 
 
 class User(IDModelMixin):
-    username: str
     phone: str
-    is_admin: bool = False
+    username: str
     is_blocked: bool = False
 
 

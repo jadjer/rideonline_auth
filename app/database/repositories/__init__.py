@@ -11,16 +11,3 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
-# from .comments import CommentsRepository
-# from .event_confirmations import EventConfirmationsRepository
-# from .events import EventsRepository
-# from .fuels import FuelsRepository
-# from .geos import GeosRepository
-# from .posts import PostsRepository
-# from .reminders import RemindersRepository
-# from .service_types import ServiceTypesRepository
-# from .services import ServicesRepository
-# from .tokens import TokensRepository
-from .users import UsersRepository
-# from .vehicles import Vehicle

@@ -18,4 +18,9 @@ from fastapi.responses import JSONResponse
 
 
 async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
-    return JSONResponse({"errors": [exc.detail]}, status_code=exc.status_code)
+    return JSONResponse({
+        "error": {
+            "code": exc.status_code,
+            "message": exc.detail,
+        }
+    }, status_code=exc.status_code)

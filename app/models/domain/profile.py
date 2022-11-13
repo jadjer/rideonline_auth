@@ -14,23 +14,20 @@
 
 from enum import Enum
 from typing import Optional
-from pydantic import HttpUrl, EmailStr
-
-from app.models.domain.rwmodel import RWModel
+from pydantic import BaseModel, HttpUrl
 
 
 class Gender(Enum):
-    UNDEFINED = "undefined"
-    MALE = "male"
-    FEMALE = "female"
+    undefined = "undefined"
+    male = "male"
+    female = "female"
 
 
-class Profile(RWModel):
-    email: Optional[EmailStr] = None
+class Profile(BaseModel):
     first_name: Optional[str] = None
-    second_name: Optional[str] = None
     last_name: Optional[str] = None
-    gender: Gender = Gender.UNDEFINED
+    gender: Gender = Gender.undefined
     age: Optional[int] = None
-
+    country: Optional[str] = None
+    region: Optional[str] = None
     image: Optional[HttpUrl] = None

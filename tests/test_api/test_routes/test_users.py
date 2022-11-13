@@ -16,14 +16,11 @@ import pytest
 
 from fastapi import FastAPI, status
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
-from app.database.repositories.profiles import ProfilesRepository
-from app.database.repositories.users import UsersRepository
-from app.models.domain.profile import Profile
-from app.models.domain.user import UserInDB, User
-from app.models.schemas.user import UserInResponse
+from app.database.repositories.phone_repository import PhoneRepository
+from app.database.repositories.user_repository import UserRepository
+from app.models.domain.user import User
+from app.models.schemas.user import UserResponse
 
 
 @pytest.fixture(params=("", "value", "Token value", "JWT value", "Bearer value"))
@@ -34,7 +31,7 @@ def wrong_authorization_header(request) -> str:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "api_method, route_name",
-    (("GET", "users:get-current-user"), ("PUT", "users:update-current-user")),
+    (("GET", "user:get-user"), ("PATCH", "user:update-user")),
 )
 async def test_user_can_not_access_own_profile_if_not_logged_in(
         initialized_app: FastAPI,
@@ -50,7 +47,7 @@ async def test_user_can_not_access_own_profile_if_not_logged_in(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "api_method, route_name",
-    (("GET", "users:get-current-user"), ("PUT", "users:update-current-user")),
+    (("GET", "user:get-user"), ("PATCH", "user:update-user")),
 )
 async def test_user_can_not_retrieve_own_profile_if_wrong_token(
         initialized_app: FastAPI,
@@ -72,37 +69,57 @@ async def test_user_can_not_retrieve_own_profile_if_wrong_token(
 async def test_user_can_retrieve_own_profile(
         initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, token: str
 ) -> None:
-    response = await authorized_client.get(initialized_app.url_path_for("users:get-current-user"))
+    response = await authorized_client.get(initialized_app.url_path_for("user:get-user"))
     assert response.status_code == status.HTTP_200_OK
 
-    user_profile = UserInResponse(**response.json())
+    user_profile = UserResponse(**response.json())
     assert user_profile.user.username == test_user.username
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "update_field, update_value",
-    (
-            ("username", "new_username"),
-            ("phone", "+375257654321"),
-    ),
-)
-async def test_user_can_update_own_profile(
+async def test_user_can_update_username_on_own_profile(
         initialized_app: FastAPI,
         authorized_client: AsyncClient,
         test_user: User,
         token: str,
-        update_value: str,
-        update_field: str,
+        session,
 ) -> None:
-    response = await authorized_client.put(
-        initialized_app.url_path_for("users:update-current-user"),
-        json={"user": {update_field: update_value}},
+    username = "new_username"
+
+    phone_repository = PhoneRepository(session)
+    verification_code = await phone_repository.create_verification_code_by_phone(test_user.phone)
+
+    response = await authorized_client.patch(
+        initialized_app.url_path_for("user:update-user"),
+        json={"user": {"username": username, "verification_code": verification_code}},
     )
     assert response.status_code == status.HTTP_200_OK
 
-    user_profile = UserInResponse(**response.json()).dict()
-    assert user_profile["user"][update_field] == update_value
+    user_profile = UserResponse(**response.json()).dict()
+    assert user_profile["user"]["username"] == username
+
+
+@pytest.mark.asyncio
+async def test_user_can_update_phone_on_own_profile(
+        initialized_app: FastAPI,
+        authorized_client: AsyncClient,
+        test_user: User,
+        token: str,
+        session,
+) -> None:
+    phone = "+375257654322"
+
+    phone_repository = PhoneRepository(session)
+    verification_code = await phone_repository.create_verification_code_by_phone(phone)
+
+    response = await authorized_client.patch(
+        initialized_app.url_path_for("user:update-user"),
+        json={"user": {"phone": phone, "verification_code": verification_code}},
+    )
+    assert response.status_code == status.HTTP_200_OK
+
+    user_profile = UserResponse(**response.json()).dict()
+    assert user_profile["user"]["phone"] == phone
 
 
 @pytest.mark.asyncio
@@ -110,22 +127,28 @@ async def test_user_can_change_password(
         initialized_app: FastAPI,
         authorized_client: AsyncClient,
         test_user: User,
-        session: AsyncSession,
+        session,
 ) -> None:
     password = "new_password"
 
-    response = await authorized_client.put(
-        initialized_app.url_path_for("users:update-current-user"),
-        json={"user": {"password": password}},
+    phone_repository = PhoneRepository(session)
+    verification_code = await phone_repository.create_verification_code_by_phone(test_user.phone)
+
+    response = await authorized_client.patch(
+        initialized_app.url_path_for("user:update-user"),
+        json={
+            "user": {
+                "password": password,
+                "verification_code": verification_code
+            }
+        },
     )
 
     assert response.status_code == status.HTTP_200_OK
-    user_profile = UserInResponse(**response.json())
+    user_profile = UserResponse(**response.json())
 
-    users_repo = UsersRepository(session)
-    user: UserInDB = await users_repo.get_user_by_username(
-        username=user_profile.user.username
-    )
+    user_repository = UserRepository(session)
+    user = await user_repository.get_user_by_id(user_profile.user.id)
 
     assert user.check_password(password)
 
@@ -141,21 +164,30 @@ async def test_user_can_change_password(
 async def test_user_can_not_take_already_used_credentials(
         initialized_app: FastAPI,
         authorized_client: AsyncClient,
-        session: AsyncSession,
+        session,
         credentials_part: str,
         credentials_value: str,
 ) -> None:
     user_dict = {
         "username": "not_taken_username",
         "password": "password",
-        "phone": "+375257654322",
+        "phone": "+375257654322"
     }
     user_dict.update({credentials_part: credentials_value})
-    users_repo = UsersRepository(session)
-    await users_repo.create_user(**user_dict)
 
-    response = await authorized_client.put(
-        initialized_app.url_path_for("users:update-current-user"),
-        json={"user": {credentials_part: credentials_value}},
+    user_repository = UserRepository(session)
+    await user_repository.create_user_by_phone(**user_dict)
+
+    phone_repository = PhoneRepository(session)
+    verification_code = await phone_repository.create_verification_code_by_phone(user_dict["phone"])
+
+    response = await authorized_client.patch(
+        initialized_app.url_path_for("user:update-user"),
+        json={
+            "user": {
+                credentials_part: credentials_value,
+                "verification_code": verification_code
+            }
+        },
     )
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_409_CONFLICT

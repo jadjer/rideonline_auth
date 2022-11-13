@@ -12,16 +12,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime
-from pydantic import BaseModel
+class EntityAlreadyExists(Exception):
+    """Raised when entity was not found in database."""
 
 
-class JWTMeta(BaseModel):
-    exp: datetime
-    sub: str
+class EntityCreateError(Exception):
+    """Raised when entity was not found in database."""
 
 
-class JWTUser(BaseModel):
-    user_id: int
-    phone: str
-    username: str
+class EntityDeleteError(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityDoesNotExists(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityGetError(Exception):
+    """Raised when entity was not found in database."""
+
+
+class EntityUpdateError(Exception):
+    """Raised when entity was not found in database."""

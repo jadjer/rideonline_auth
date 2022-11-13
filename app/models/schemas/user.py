@@ -11,42 +11,41 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 from typing import Optional
+
 from pydantic import BaseModel
 
+from app.models.domain.token import Token
 from app.models.domain.user import User
-from app.models.schemas.rwschema import RWSchema
 
 
-class PhoneInVerification(RWSchema):
+class PhoneVerification(BaseModel):
     phone: str
 
 
-class UserInLogin(RWSchema):
+class UserLogin(BaseModel):
     username: str
     password: str
 
 
-class UserInCreate(UserInLogin):
+class UserCreate(BaseModel):
+    username: str
     phone: str
+    password: str
     verification_code: int
 
 
-class UserInUpdate(BaseModel):
+class UserUpdate(BaseModel):
     username: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
-    verification_code: Optional[int] = None
+    verification_code: int
 
 
-class UserWithToken(User):
-    token: str
-
-
-class UserInResponse(RWSchema):
+class UserResponse(BaseModel):
     user: User
 
 
-class UserInResponseWithToken(RWSchema):
-    user: UserWithToken
+class UserWithTokenResponse(BaseModel):
+    user: User
+    token: Token

@@ -15,38 +15,38 @@
 from fastapi import FastAPI
 from loguru import logger
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from neo4j import AsyncGraphDatabase, AsyncDriver, AsyncSession
 
 from app.core.settings.app import AppSettings
 
 
-async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncSession:
-    logger.info("Connecting to Postgres")
+async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncDriver:
+    logger.info("Connecting to Neo4j")
 
-    engine = create_async_engine(
+    driver: AsyncDriver = AsyncGraphDatabase.driver(
         settings.get_database_url,
-        echo=True
+        auth=(
+            settings.database_user,
+            settings.database_pass
+        )
     )
-    app.state.engine = engine
+    session: AsyncSession = driver.session()
 
-    async_session = sessionmaker(
-        bind=engine,
-        expire_on_commit=False,
-        class_=AsyncSession
-    )
-
-    session = async_session()
-
+    app.state.driver = driver
     app.state.session = session
+
     logger.info("Connection established")
 
-    return session
+    return driver
 
 
 async def close_db_connection(app: FastAPI) -> None:
     logger.info("Closing connection to database")
 
-    await app.state.engine.dispose()
+    driver: AsyncDriver = app.state.driver
+    session: AsyncSession = app.state.session
+
+    await session.close()
+    await driver.close()
 
     logger.info("Connection closed")

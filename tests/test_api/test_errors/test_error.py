@@ -19,7 +19,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_frw_validation_error_format(app: FastAPI):
-    async with AsyncClient(base_url="http://localhost:10000", app=app) as client:
+    async with AsyncClient(base_url="http://localhost:12345", app=app) as client:
         response = await client.get("/wrong_path/asd")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND

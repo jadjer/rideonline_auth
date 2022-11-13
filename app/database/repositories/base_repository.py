@@ -12,16 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime
-from pydantic import BaseModel
+from neo4j import AsyncSession
 
 
-class JWTMeta(BaseModel):
-    exp: datetime
-    sub: str
+class BaseRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
 
-
-class JWTUser(BaseModel):
-    user_id: int
-    phone: str
-    username: str
+    @property
+    def session(self) -> AsyncSession:
+        return self._session

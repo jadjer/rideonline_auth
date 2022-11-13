@@ -12,104 +12,66 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    HTTPException,
-    status,
-    Query,
-)
+from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.get_id_from_path import get_user_id_from_path
-from app.api.dependencies.profiles import get_profiles_filter
-from app.database.errors import EntityDoesNotExists, EntityUpdateError
-from app.database.repositories.profiles import ProfilesRepository
-from app.models.schemas.profile import (
-    ProfileInUpdate,
-    ProfileInResponse,
-    ListOfProfileInResponse, ProfilesFilter,
-)
+from app.api.dependencies.get_from_path import get_user_id_from_path
+from app.database.repositories.user_repository import UserRepository
+from app.database.repositories.profile_repository import ProfileRepository
+from app.models.domain.user import User
+from app.models.schemas.profile import ProfileResponse, ProfileUpdate
 from app.resources import strings
 
 router = APIRouter()
 
 
-@router.get(
-    "",
-    response_model=ListOfProfileInResponse,
-    name="profiles:get-all-profiles",
-    dependencies=[
-        Depends(get_current_user_authorizer())
-    ]
-)
-async def get_profiles(
-        profiles_filter: ProfilesFilter = Depends(get_profiles_filter),
-        profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
-) -> ListOfProfileInResponse:
-    profiles = await profiles_repo.get_profiles_with_filter(profiles_filter.limit, profiles_filter.offset)
-
-    return ListOfProfileInResponse(profiles=profiles, count=len(profiles))
-
-
-@router.get(
-    "/me",
-    response_model=ProfileInResponse,
-    name="profiles:get-my-profile"
-)
+@router.get("", status_code=status.HTTP_200_OK, name="profiles:get-my-profile")
 async def get_my_profile(
-        user_id: int = Depends(get_current_user_authorizer()),
-        profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
-) -> ProfileInResponse:
-    profile_not_found = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
+        user: User = Depends(get_current_user_authorizer()),
+        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
+) -> ProfileResponse:
+    profile = await profile_repository.get_profile_by_id(user.id)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    try:
-        profile = await profiles_repo.get_profile_by_user_id(user_id)
-    except EntityDoesNotExists as exception:
-        raise profile_not_found from exception
-
-    return ProfileInResponse(profile=profile)
+    return ProfileResponse(
+        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+        profile=profile
+    )
 
 
-@router.get(
-    "/{user_id}",
-    response_model=ProfileInResponse,
-    name="profiles:get-profile",
-    dependencies=[
-        Depends(get_current_user_authorizer())
-    ]
-)
+@router.get("/{user_id}", status_code=status.HTTP_200_OK, name="profiles:get-profile-by-id")
 async def get_profile_by_id(
         user_id: int = Depends(get_user_id_from_path),
-        profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
-) -> ProfileInResponse:
-    request_error = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
+        user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
+) -> ProfileResponse:
+    user = await user_repository.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
-    try:
-        profile = await profiles_repo.get_profile_by_user_id(user_id)
-    except EntityDoesNotExists as existence_error:
-        raise request_error from existence_error
+    profile = await profile_repository.get_profile_by_id(user_id)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    return ProfileInResponse(profile=profile)
+    return ProfileResponse(
+        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+        profile=profile
+    )
 
 
-@router.put(
-    "/me",
-    response_model=ProfileInResponse,
-    name="profiles:update-my-profile"
-)
-async def update_my_profile(
-        profile_update: ProfileInUpdate = Body(..., embed=True, alias="user"),
-        user_id: int = Depends(get_current_user_authorizer()),
-        profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
-) -> ProfileInResponse:
-    update_error = HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.USERNAME_TAKEN)
+@router.patch("", status_code=status.HTTP_200_OK, name="profiles:update-profile")
+async def update_profile(
+        request: ProfileUpdate = Body(..., alias="profile"),
+        user: User = Depends(get_current_user_authorizer()),
+        profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
+) -> ProfileResponse:
+    profile = await profile_repository.update_profile(user.id, **request.profile.__dict__)
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    try:
-        profile = await profiles_repo.update_profile(user_id, **profile_update.__dict__)
-    except EntityUpdateError as exception:
-        raise update_error from exception
-
-    return ProfileInResponse(profile=profile)
+    return ProfileResponse(
+        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+        profile=profile
+    )

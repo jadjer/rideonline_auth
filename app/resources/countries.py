@@ -12,16 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from datetime import datetime
-from pydantic import BaseModel
+import pycountry
 
 
-class JWTMeta(BaseModel):
-    exp: datetime
-    sub: str
+class Countries(object):
 
-
-class JWTUser(BaseModel):
-    user_id: int
-    phone: str
-    username: str
+    def is_valid(self, country_name: str) -> bool:
+        pycountry.countries.search_fuzzy(country_name)

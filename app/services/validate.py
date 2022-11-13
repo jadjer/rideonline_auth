@@ -12,28 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Callable
-
-from fastapi import FastAPI
 from loguru import logger
-
-from app.core.settings.app import AppSettings
-from app.database.events import close_db_connection, connect_to_db
+from phonenumbers import NumberParseException, parse, is_possible_number, is_valid_number
 
 
-def create_start_app_handler(
-    app: FastAPI,
-    settings: AppSettings,
-) -> Callable:  # type: ignore
-    async def start_app() -> None:
-        await connect_to_db(app, settings)
+def check_phone_is_valid(phone_number: str) -> bool:
+    try:
+        phone = parse(phone_number, None)
+    except NumberParseException:
+        logger.warning(f"Phone number {phone_number} parser error")
+        return False
 
-    return start_app
+    if not is_possible_number(phone):
+        logger.warning(f"Phone number {phone_number} is impossible number")
+        return False
 
+    if not is_valid_number(phone):
+        logger.warning(f"Phone number {phone_number} is invalid number")
+        return False
 
-def create_stop_app_handler(app: FastAPI) -> Callable:  # type: ignore
-    @logger.catch
-    async def stop_app() -> None:
-        await close_db_connection(app)
-
-    return stop_app
+    return True
