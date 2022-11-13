@@ -9,8 +9,11 @@ permissions:
   contents: read
 
 env:
-  PORT: 1234
-  SMS_API_HOST: "http://127.0.0.1"
+  DATABASE_HOST: "127.0.0.1"
+  DATABASE_USER: "user"
+  DATABASE_PASS: "pass"
+  SMS_SERVER: "http://127.0.0.1"
+  secret_key: "secret"
 
 jobs:
   build:
