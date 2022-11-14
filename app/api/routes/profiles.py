@@ -21,6 +21,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.profile_repository import ProfileRepository
 from app.models.domain.user import User
 from app.models.schemas.profile import ProfileResponse, ProfileUpdate
+from app.models.schemas.wrapper import WrapperResponse
 from app.resources import strings
 
 router = APIRouter()
@@ -30,14 +31,16 @@ router = APIRouter()
 async def get_my_profile(
         user: User = Depends(get_current_user_authorizer()),
         profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
-) -> ProfileResponse:
+) -> WrapperResponse:
     profile = await profile_repository.get_profile_by_id(user.id)
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    return ProfileResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-        profile=profile
+    return WrapperResponse(
+        data=ProfileResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            profile=profile
+        )
     )
 
 
@@ -46,7 +49,7 @@ async def get_profile_by_id(
         user_id: int = Depends(get_user_id_from_path),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
-) -> ProfileResponse:
+) -> WrapperResponse:
     user = await user_repository.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
@@ -55,9 +58,11 @@ async def get_profile_by_id(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    return ProfileResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-        profile=profile
+    return WrapperResponse(
+        data=ProfileResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            profile=profile
+        )
     )
 
 
@@ -66,12 +71,14 @@ async def update_profile(
         request: ProfileUpdate = Body(..., alias="profile"),
         user: User = Depends(get_current_user_authorizer()),
         profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
-) -> ProfileResponse:
+) -> WrapperResponse:
     profile = await profile_repository.update_profile(user.id, **request.profile.__dict__)
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
-    return ProfileResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-        profile=profile
+    return WrapperResponse(
+        data=ProfileResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            profile=profile
+        )
     )

@@ -21,6 +21,7 @@ from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
 from app.models.schemas.user import UserResponse
+from app.models.schemas.wrapper import WrapperResponse
 
 
 @pytest.fixture(params=("", "value", "Token value", "JWT value", "Bearer value"))
@@ -41,7 +42,7 @@ async def test_user_can_not_access_own_profile_if_not_logged_in(
         route_name: str,
 ) -> None:
     response = await client.request(api_method, initialized_app.url_path_for(route_name))
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.asyncio
@@ -62,7 +63,7 @@ async def test_user_can_not_retrieve_own_profile_if_wrong_token(
         initialized_app.url_path_for(route_name),
         headers={"Authorization": wrong_authorization_header},
     )
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.asyncio
@@ -72,7 +73,10 @@ async def test_user_can_retrieve_own_profile(
     response = await authorized_client.get(initialized_app.url_path_for("user:get-user"))
     assert response.status_code == status.HTTP_200_OK
 
-    user_profile = UserResponse(**response.json())
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    user_profile = UserResponse(**result.data)
     assert user_profile.user.username == test_user.username
 
 
@@ -95,7 +99,10 @@ async def test_user_can_update_username_on_own_profile(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    user_profile = UserResponse(**response.json()).dict()
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    user_profile = UserResponse(**result.data).dict()
     assert user_profile["user"]["username"] == username
 
 
@@ -118,7 +125,10 @@ async def test_user_can_update_phone_on_own_profile(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    user_profile = UserResponse(**response.json()).dict()
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    user_profile = UserResponse(**result.data).dict()
     assert user_profile["user"]["phone"] == phone
 
 
@@ -143,9 +153,12 @@ async def test_user_can_change_password(
             }
         },
     )
-
     assert response.status_code == status.HTTP_200_OK
-    user_profile = UserResponse(**response.json())
+
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    user_profile = UserResponse(**result.data)
 
     user_repository = UserRepository(session)
     user = await user_repository.get_user_by_id(user_profile.user.id)

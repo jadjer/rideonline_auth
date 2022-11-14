@@ -16,11 +16,11 @@ from fastapi import HTTPException
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
+from app.models.schemas.wrapper import WrapperResponse
+
 
 async def http_error_handler(_: Request, exc: HTTPException) -> JSONResponse:
-    return JSONResponse({
-        "error": {
-            "code": exc.status_code,
-            "message": exc.detail,
-        }
-    }, status_code=exc.status_code)
+    return JSONResponse(
+        WrapperResponse(success=False, message=exc.detail).dict(),
+        status_code=exc.status_code
+    )

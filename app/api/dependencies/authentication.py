@@ -13,11 +13,9 @@
 #  limitations under the License.
 
 from loguru import logger
-from typing import Callable, Optional
+from typing import Callable
 
-from fastapi import Depends, HTTPException, Security, requests, status
-from fastapi.security import APIKeyHeader
-from fastapi.exceptions import HTTPException as FastApiHTTPException
+from fastapi import Depends, HTTPException, Security, status
 
 from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
@@ -25,18 +23,10 @@ from app.core.settings.app import AppSettings
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
 from app.resources import strings
+from app.services.auth_token_header import AuthTokenHeader
 from app.services.token import get_user_id_from_token
 
 HEADER_KEY = "Authorization"
-
-
-class MyApiKeyHeader(APIKeyHeader):
-    async def __call__(self, request: requests.Request) -> Optional[str]:
-        try:
-            return await super().__call__(request)
-        except FastApiHTTPException as exception:
-            logger.error(exception)
-            raise HTTPException(status_code=exception.status_code, detail=strings.AUTHENTICATION_REQUIRED)
 
 
 def get_current_user_authorizer() -> Callable:
@@ -44,17 +34,17 @@ def get_current_user_authorizer() -> Callable:
 
 
 def _get_authorization_header(
-        api_key: str = Security(MyApiKeyHeader(name=HEADER_KEY)),
+        api_key: str = Security(AuthTokenHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> str:
     try:
         token_prefix, token = api_key.split(" ")
     except ValueError as exception:
         logger.error(exception)
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.WRONG_TOKEN_PREFIX)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.WRONG_TOKEN_PREFIX)
 
     if token_prefix != settings.jwt_token_prefix:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.WRONG_TOKEN_PREFIX)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.WRONG_TOKEN_PREFIX)
 
     return token
 
@@ -67,7 +57,7 @@ async def _get_user_id_from_token(
         user_id = get_user_id_from_token(token, settings.secret_key.get_secret_value())
     except ValueError as exception:
         logger.error(exception)
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=strings.MALFORMED_PAYLOAD)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
 
     return user_id
 
@@ -79,6 +69,6 @@ async def _get_current_user(
     user = await user_repository.get_user_by_id(user_id)
     if not user:
         logger.error(f"User with ID {user_id} doesn't found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return user
