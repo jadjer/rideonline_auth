@@ -12,6 +12,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from random import randrange
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +29,10 @@ def get_application() -> FastAPI:
     settings = get_app_settings()
     settings.configure_logging()
 
-    application = FastAPI(**settings.fastapi_kwargs)
+    if settings.debug:
+        application = FastAPI(**settings.fastapi_kwargs)
+    else:
+        application = FastAPI(docs_url=None, redoc_url=None)
 
     application.add_middleware(
         CORSMiddleware,
@@ -50,6 +55,10 @@ def get_application() -> FastAPI:
     application.add_exception_handler(RequestValidationError, http422_error_handler)
 
     application.include_router(api_router, prefix=settings.api_prefix)
+
+    @application.get("/")
+    async def health():
+        return {"health": randrange(100000, 999999)}
 
     return application
 
