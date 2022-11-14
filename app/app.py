@@ -51,6 +51,7 @@ def get_application() -> FastAPI:
     )
 
     application.add_exception_handler(HTTPException, http_error_handler)
+    application.add_exception_handler(404, http_error_handler)
 
     application.include_router(api_router, prefix=settings.api_prefix)
 

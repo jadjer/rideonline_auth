@@ -16,6 +16,8 @@ import pytest
 from fastapi import FastAPI, status
 from httpx import AsyncClient
 
+from app.models.schemas.wrapper import WrapperResponse
+
 
 @pytest.mark.asyncio
 async def test_frw_validation_error_format(app: FastAPI):
@@ -24,5 +26,6 @@ async def test_frw_validation_error_format(app: FastAPI):
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    error_data = response.json()
-    assert "Not Found" in error_data["detail"]
+    result = WrapperResponse(**response.json())
+    assert not result.success
+    assert "Not Found" in result.message
