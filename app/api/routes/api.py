@@ -18,6 +18,6 @@ from . import auth, profiles, user
 
 router = APIRouter()
 
-router.include_router(auth.router, tags=["auth"], prefix="/auth")
-router.include_router(user.router, tags=["user"], prefix="/user")
-router.include_router(profiles.router, tags=["profiles"], prefix="/profiles")
+router.include_router(auth.router, tags=["Auth"])
+router.include_router(user.router, tags=["User"], prefix="/user")
+router.include_router(profiles.router, tags=["Profile"], prefix="/profiles")
