@@ -20,6 +20,7 @@ from httpx import AsyncClient
 from app.models.domain.profile import Profile
 from app.models.domain.user import User
 from app.models.schemas.profile import ProfileResponse
+from app.models.schemas.wrapper import WrapperResponse
 
 
 @pytest.mark.asyncio
@@ -32,7 +33,10 @@ async def test_unregistered_user_will_receive_profile(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    profile = ProfileResponse(**response.json())
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    profile = ProfileResponse(**result.data)
     assert profile.user.id == test_user.id
     assert profile.user.username == test_user.username
     assert profile.user.phone == test_user.phone
@@ -63,7 +67,10 @@ async def test_user_will_receive_profile(
     )
     assert response.status_code == status.HTTP_200_OK
 
-    profile = ProfileResponse(**response.json())
+    result = WrapperResponse(**response.json())
+    assert result.success
+
+    profile = ProfileResponse(**result.data)
     assert profile.user.id == test_user.id
     assert profile.user.username == test_user.username
     assert profile.user.phone == test_user.phone

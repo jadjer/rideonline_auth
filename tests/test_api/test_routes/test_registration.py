@@ -19,7 +19,8 @@ from httpx import AsyncClient
 
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.phone_repository import PhoneRepository
-from app.models.domain.user import User
+from app.models.domain.user import User, UserInDB
+from app.models.schemas.wrapper import WrapperResponse
 
 
 @pytest.mark.asyncio
@@ -42,6 +43,9 @@ async def test_user_success_registration(initialized_app: FastAPI, client: Async
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
     assert response.status_code == status.HTTP_201_CREATED
+
+    result = WrapperResponse(**response.json())
+    assert result.success
 
     user_repository = UserRepository(session)
     user = await user_repository.get_user_by_username(username=username)

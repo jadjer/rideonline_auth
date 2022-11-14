@@ -12,19 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import pytest
-
-from fastapi import FastAPI, status
-from httpx import AsyncClient
+from pydantic import BaseModel
 
 
-@pytest.mark.asyncio
-async def test_frw_validation_error_format(app: FastAPI):
-    @app.get("/wrong_path/{param}")
-    def route_for_test(param: int) -> None:  # pragma: no cover
-        pass
-
-    async with AsyncClient(base_url="http://localhost:12345", app=app) as client:
-        response = await client.get("/wrong_path/asd")
-
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+class WrapperResponse(BaseModel):
+    success: bool = True
+    data: dict = None
+    message: str = ""

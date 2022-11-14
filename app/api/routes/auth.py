@@ -26,6 +26,7 @@ from app.models.schemas.user import (
     PhoneVerification,
     Token,
 )
+from app.models.schemas.wrapper import WrapperResponse
 from app.services.token import create_access_token_for_user
 from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
@@ -56,7 +57,7 @@ async def register(
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
-) -> UserWithTokenResponse:
+) -> WrapperResponse:
     if await user_repository.is_exists(request.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
@@ -77,7 +78,9 @@ async def register(
         secret_key=settings.secret_key.get_secret_value()
     )
 
-    return UserWithTokenResponse(user=user, token=Token(token_access=token, token_refresh=""))
+    return WrapperResponse(
+        data=UserWithTokenResponse(user=user, token=Token(token_access=token, token_refresh=""))
+    )
 
 
 @router.post("/login", status_code=status.HTTP_200_OK, name="auth:login")
@@ -85,7 +88,7 @@ async def login(
         request: UserLogin = Body(..., embed=True, alias="login"),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         settings: AppSettings = Depends(get_app_settings),
-) -> UserWithTokenResponse:
+) -> WrapperResponse:
     user = await user_repository.get_user_by_username(request.username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
@@ -100,7 +103,9 @@ async def login(
         secret_key=settings.secret_key.get_secret_value()
     )
 
-    return UserWithTokenResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-        token=Token(token_access=token, token_refresh="")
+    return WrapperResponse(
+        data=UserWithTokenResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            token=Token(token_access=token, token_refresh="")
+        )
     )

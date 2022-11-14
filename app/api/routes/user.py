@@ -20,6 +20,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.phone_repository import PhoneRepository
 from app.models.domain.user import User, UserInDB
 from app.models.schemas.user import UserResponse, UserUpdate
+from app.models.schemas.wrapper import WrapperResponse
 from app.resources import strings
 
 router = APIRouter()
@@ -29,13 +30,15 @@ router = APIRouter()
 async def get_user(
         user: User = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
-) -> UserResponse:
+) -> WrapperResponse:
     user: User = await user_repository.get_user_by_username(user.username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
-    return UserResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+    return WrapperResponse(
+        data=UserResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+        )
     )
 
 
@@ -45,7 +48,7 @@ async def update_user(
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
-) -> UserResponse:
+) -> WrapperResponse:
     if request.phone and request.phone != user.phone:
         if await phone_repository.is_attached_by_phone(request.phone):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
@@ -65,6 +68,8 @@ async def update_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
-    return UserResponse(
-        user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+    return WrapperResponse(
+        data=UserResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+        )
     )
