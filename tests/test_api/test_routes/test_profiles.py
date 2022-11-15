@@ -36,7 +36,7 @@ async def test_unregistered_user_will_receive_profile(
     result = WrapperResponse(**response.json())
     assert result.success
 
-    profile = ProfileResponse(**result.data)
+    profile = ProfileResponse(**result.payload)
     assert profile.user.id == test_user.id
     assert profile.user.username == test_user.username
     assert profile.user.phone == test_user.phone
@@ -70,7 +70,7 @@ async def test_user_will_receive_profile(
     result = WrapperResponse(**response.json())
     assert result.success
 
-    profile = ProfileResponse(**result.data)
+    profile = ProfileResponse(**result.payload)
     assert profile.user.id == test_user.id
     assert profile.user.username == test_user.username
     assert profile.user.phone == test_user.phone

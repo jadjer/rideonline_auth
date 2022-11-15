@@ -17,5 +17,5 @@ from pydantic import BaseModel
 
 class WrapperResponse(BaseModel):
     success: bool = True
-    data: dict = None
+    payload: dict = None
     message: str = ""
