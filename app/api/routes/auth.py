@@ -38,7 +38,7 @@ router = APIRouter()
 
 @router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
-        request: PhoneVerification = Body(..., embed=True, alias="verification"),
+        request: PhoneVerification,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> None:
@@ -53,7 +53,7 @@ async def get_verification_code(
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, name="auth:register")
 async def register(
-        request: UserCreate = Body(..., embed=True, alias="register"),
+        request: UserCreate,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
@@ -79,13 +79,13 @@ async def register(
     )
 
     return WrapperResponse(
-        data=UserWithTokenResponse(user=user, token=Token(token_access=token, token_refresh=""))
+        payload=UserWithTokenResponse(user=user, token=Token(token_access=token, token_refresh=""))
     )
 
 
 @router.post("/login", status_code=status.HTTP_200_OK, name="auth:login")
 async def login(
-        request: UserLogin = Body(..., embed=True, alias="login"),
+        request: UserLogin,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
@@ -104,7 +104,7 @@ async def login(
     )
 
     return WrapperResponse(
-        data=UserWithTokenResponse(
+        payload=UserWithTokenResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
             token=Token(token_access=token, token_refresh="")
         )

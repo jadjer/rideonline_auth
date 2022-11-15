@@ -22,7 +22,7 @@ from app.models.domain.user import User
 
 @pytest.mark.asyncio
 async def test_user_successful_login(initialized_app: FastAPI, client: AsyncClient, test_user: User):
-    login_json = {"login": {"username": "username", "password": "password"}}
+    login_json = {"username": "username", "password": "password"}
 
     response = await client.post(initialized_app.url_path_for("auth:login"), json=login_json)
 
@@ -41,8 +41,7 @@ async def test_user_login_when_credential_part_does_not_match(
         credentials_part: str,
         credentials_value: str,
 ) -> None:
-    login_json = {"login": {"username": "test@test.com", "password": "password"}}
-    login_json["login"][credentials_part] = credentials_value
+    login_json = {"username": "test@test.com", "password": "password", credentials_part: credentials_value}
 
     response = await client.post(initialized_app.url_path_for("auth:login"), json=login_json)
 

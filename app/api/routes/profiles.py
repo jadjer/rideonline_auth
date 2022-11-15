@@ -37,7 +37,7 @@ async def get_my_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
     return WrapperResponse(
-        data=ProfileResponse(
+        payload=ProfileResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
             profile=profile
         )
@@ -59,7 +59,7 @@ async def get_profile_by_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
     return WrapperResponse(
-        data=ProfileResponse(
+        payload=ProfileResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
             profile=profile
         )
@@ -68,16 +68,16 @@ async def get_profile_by_id(
 
 @router.patch("", status_code=status.HTTP_200_OK, name="profiles:update-profile")
 async def update_profile(
-        request: ProfileUpdate = Body(..., alias="profile"),
+        request: ProfileUpdate,
         user: User = Depends(get_current_user_authorizer()),
         profile_repository: ProfileRepository = Depends(get_repository(ProfileRepository)),
 ) -> WrapperResponse:
-    profile = await profile_repository.update_profile(user.id, **request.profile.__dict__)
+    profile = await profile_repository.update_profile(user.id, **request.__dict__)
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PROFILE_DOES_NOT_EXISTS)
 
     return WrapperResponse(
-        data=ProfileResponse(
+        payload=ProfileResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
             profile=profile
         )

@@ -33,12 +33,10 @@ async def test_user_success_registration(initialized_app: FastAPI, client: Async
     verification_code = await verification_repo.create_verification_code_by_phone(phone)
 
     registration_json = {
-        "register": {
-            "username": username,
-            "phone": phone,
-            "password": password,
-            "verification_code": verification_code
-        }
+        "username": username,
+        "phone": phone,
+        "password": password,
+        "verification_code": verification_code
     }
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
@@ -77,14 +75,12 @@ async def test_failed_user_registration_when_some_credentials_are_taken(
     verification_code = await phone_repository.create_verification_code_by_phone(phone)
 
     registration_json = {
-        "register": {
-            "username": "username",
-            "phone": phone,
-            "password": "password",
-            "verification_code": verification_code
-        }
+        "username": "username",
+        "phone": phone,
+        "password": "password",
+        "verification_code": verification_code,
+        credentials_part: credentials_value
     }
-    registration_json["register"][credentials_part] = credentials_value
 
     response = await client.post(
         initialized_app.url_path_for("auth:register"), json=registration_json

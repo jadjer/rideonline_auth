@@ -76,7 +76,7 @@ async def test_user_can_retrieve_own_profile(
     result = WrapperResponse(**response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.data)
+    user_profile = UserResponse(**result.payload)
     assert user_profile.user.username == test_user.username
 
 
@@ -95,14 +95,14 @@ async def test_user_can_update_username_on_own_profile(
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
-        json={"user": {"username": username, "verification_code": verification_code}},
+        json={"username": username, "verification_code": verification_code},
     )
     assert response.status_code == status.HTTP_200_OK
 
     result = WrapperResponse(**response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.data).dict()
+    user_profile = UserResponse(**result.payload).dict()
     assert user_profile["user"]["username"] == username
 
 
@@ -121,14 +121,14 @@ async def test_user_can_update_phone_on_own_profile(
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
-        json={"user": {"phone": phone, "verification_code": verification_code}},
+        json={"phone": phone, "verification_code": verification_code},
     )
     assert response.status_code == status.HTTP_200_OK
 
     result = WrapperResponse(**response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.data).dict()
+    user_profile = UserResponse(**result.payload).dict()
     assert user_profile["user"]["phone"] == phone
 
 
@@ -147,10 +147,8 @@ async def test_user_can_change_password(
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
         json={
-            "user": {
-                "password": password,
-                "verification_code": verification_code
-            }
+            "password": password,
+            "verification_code": verification_code
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -158,7 +156,7 @@ async def test_user_can_change_password(
     result = WrapperResponse(**response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.data)
+    user_profile = UserResponse(**result.payload)
 
     user_repository = UserRepository(session)
     user = await user_repository.get_user_by_id(user_profile.user.id)
@@ -197,10 +195,8 @@ async def test_user_can_not_take_already_used_credentials(
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
         json={
-            "user": {
-                credentials_part: credentials_value,
-                "verification_code": verification_code
-            }
+            credentials_part: credentials_value,
+            "verification_code": verification_code
         },
     )
     assert response.status_code == status.HTTP_409_CONFLICT

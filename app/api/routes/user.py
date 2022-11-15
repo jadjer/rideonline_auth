@@ -36,7 +36,7 @@ async def get_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
-        data=UserResponse(
+        payload=UserResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
         )
     )
@@ -44,7 +44,7 @@ async def get_user(
 
 @router.patch("", status_code=status.HTTP_200_OK, name="user:update-user")
 async def update_user(
-        request: UserUpdate = Body(..., embed=True, alias="user"),
+        request: UserUpdate,
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
@@ -69,7 +69,7 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
-        data=UserResponse(
+        payload=UserResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
         )
     )
