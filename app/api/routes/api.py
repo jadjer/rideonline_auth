@@ -20,4 +20,4 @@ router = APIRouter()
 
 router.include_router(auth.router, tags=["Auth"])
 router.include_router(user.router, tags=["User"], prefix="/user")
-router.include_router(profiles.router, tags=["Profile"], prefix="/profiles")
+router.include_router(profiles.router, tags=["Profile"], prefix="/profile")
