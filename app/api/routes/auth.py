@@ -79,7 +79,10 @@ async def register(
     )
 
     return WrapperResponse(
-        payload=UserWithTokenResponse(user=user, token=Token(token_access=token, token_refresh=""))
+        payload=UserWithTokenResponse(
+            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            token=Token(token_access=token, token_refresh="")
+        )
     )
 
 
