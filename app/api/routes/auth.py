@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
@@ -27,7 +27,7 @@ from app.models.schemas.user import (
     Token,
 )
 from app.models.schemas.wrapper import WrapperResponse
-from app.services.token import create_access_token_for_user
+from app.services.token import create_tokens_for_user
 from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
 from app.api.dependencies.database import get_repository
@@ -71,7 +71,7 @@ async def register(
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.USER_CREATE_ERROR)
 
-    token = create_access_token_for_user(
+    token_access, token_refresh = create_tokens_for_user(
         user_id=user.id,
         username=user.username,
         phone=user.phone,
@@ -81,7 +81,7 @@ async def register(
     return WrapperResponse(
         payload=UserWithTokenResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-            token=Token(token_access=token, token_refresh="")
+            token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )
 
@@ -99,7 +99,7 @@ async def login(
     if not user.check_password(request.password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.INCORRECT_LOGIN_INPUT)
 
-    token = create_access_token_for_user(
+    token_access, token_refresh = create_tokens_for_user(
         user_id=user.id,
         username=user.username,
         phone=user.phone,
@@ -109,6 +109,6 @@ async def login(
     return WrapperResponse(
         payload=UserWithTokenResponse(
             user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
-            token=Token(token_access=token, token_refresh="")
+            token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )

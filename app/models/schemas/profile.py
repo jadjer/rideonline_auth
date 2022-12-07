@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
 from pydantic import BaseModel, HttpUrl
 
 from app.models.domain.user import User
@@ -20,13 +19,13 @@ from app.models.domain.profile import Profile, Gender
 
 
 class ProfileUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    gender: Gender = Gender.undefined
-    age: Optional[int] = None
-    country: Optional[str] = None
-    region: Optional[str] = None
-    image: Optional[HttpUrl] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: Gender | None = None
+    age: int | None = None
+    country: str | None = None
+    region: str | None = None
+    image: HttpUrl | None = None
 
 
 class ProfileResponse(BaseModel):

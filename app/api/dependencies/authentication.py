@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,7 +24,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
 from app.resources import strings
 from app.services.auth_token_header import AuthTokenHeader
-from app.services.token import get_user_id_from_token
+from app.services.token import get_user_id_from_access_token
 
 HEADER_KEY = "Authorization"
 
@@ -54,7 +54,7 @@ async def _get_user_id_from_token(
         settings: AppSettings = Depends(get_app_settings),
 ) -> int:
     try:
-        user_id = get_user_id_from_token(token, settings.secret_key.get_secret_value())
+        user_id = get_user_id_from_access_token(token, settings.secret_key.get_secret_value())
     except ValueError as exception:
         logger.error(exception)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
