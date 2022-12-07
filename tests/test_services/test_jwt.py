@@ -20,17 +20,21 @@ import pytest
 from app.models.domain.user import User
 from app.services.token import (
     ALGORITHM,
-    create_access_token_for_user,
-    get_username_from_token,
+    JWT_ACCESS_SUBJECT,
+    JWT_REFRESH_SUBJECT,
     create_access_token,
-    get_phone_from_token,
+    create_refresh_token,
+    create_tokens_for_user,
+    get_user_id_from_access_token,
+    get_user_id_from_refresh_token
 )
 
 
-def test_creating_jwt_token() -> None:
+def test_creating_jwt_tokens() -> None:
     token = create_access_token(
         data={"content": "payload"},
         secret_key="secret",
+        subject=JWT_ACCESS_SUBJECT,
         expires_delta=timedelta(minutes=1),
     )
     parsed_payload = jwt.decode(token, "secret", algorithms=[ALGORITHM])
@@ -38,45 +42,82 @@ def test_creating_jwt_token() -> None:
     assert parsed_payload["content"] == "payload"
 
 
-@pytest.mark.asyncio
-async def test_creating_token_for_user(test_user: User):
-    token = create_access_token_for_user(
+def test_creating_refresh_tokens() -> None:
+    token = create_refresh_token(
+        data={"content": "payload"},
+        secret_key="secret",
+        subject=JWT_REFRESH_SUBJECT,
+        expires_delta=timedelta(minutes=1),
+        access_token="token"
+    )
+    parsed_payload = jwt.decode(token, "secret", algorithms=[ALGORITHM], access_token="token")
+
+    assert parsed_payload["content"] == "payload"
+
+
+def test_creating_access_token_for_user(test_user: User):
+    token_access, _ = create_tokens_for_user(
         user_id=test_user.id,
         username=test_user.username,
         phone=test_user.phone,
         secret_key="secret"
     )
-    parsed_payload = jwt.decode(token, "secret", algorithms=[ALGORITHM])
+    parsed_payload = jwt.decode(token_access, "secret", algorithms=[ALGORITHM])
 
+    assert parsed_payload["user_id"] == test_user.id
     assert parsed_payload["username"] == test_user.username
+    assert parsed_payload["phone"] == test_user.phone
 
 
-@pytest.mark.asyncio
-async def test_retrieving_token_from_user(test_user: User):
-    token = create_access_token_for_user(
+def test_creating_refresh_token_for_user(test_user: User):
+    token_access, token_refresh = create_tokens_for_user(
+        user_id=test_user.id,
+        username=test_user.username,
+        phone=test_user.phone,
+        secret_key="secret"
+    )
+    parsed_payload = jwt.decode(token_refresh, "secret", algorithms=[ALGORITHM], access_token=token_access)
+
+    assert parsed_payload["user_id"] == test_user.id
+    assert parsed_payload["username"] == test_user.username
+    assert parsed_payload["phone"] == test_user.phone
+
+
+def test_retrieving_access_token_from_user(test_user: User):
+    token_access, _ = create_tokens_for_user(
         user_id=test_user.id,
         username=test_user.username,
         phone=test_user.phone,
         secret_key="secret"
     )
 
-    username = get_username_from_token(token, "secret")
-    assert username == test_user.username
+    user_id = get_user_id_from_access_token(token_access, "secret")
+    assert user_id == test_user.id
 
-    phone = get_phone_from_token(token, "secret")
-    assert phone == test_user.phone
+
+def test_retrieving_refresh_token_from_user(test_user: User):
+    token_access, token_refresh = create_tokens_for_user(
+        user_id=test_user.id,
+        username=test_user.username,
+        phone=test_user.phone,
+        secret_key="secret"
+    )
+
+    user_id = get_user_id_from_refresh_token(token_access, token_refresh, "secret")
+    assert user_id == test_user.id
 
 
 def test_error_when_wrong_token():
     with pytest.raises(ValueError):
-        get_username_from_token("asdf", "asdf")
+        get_user_id_from_access_token("asdf", "asdf")
 
 
 def test_error_when_wrong_token_shape():
     token = create_access_token(
         data={"content": "payload"},
         secret_key="secret",
+        subject=JWT_ACCESS_SUBJECT,
         expires_delta=timedelta(minutes=1),
     )
     with pytest.raises(ValueError):
-        get_username_from_token(token, "secret")
+        get_user_id_from_access_token(token, "secret")

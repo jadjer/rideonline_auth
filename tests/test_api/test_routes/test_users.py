@@ -68,7 +68,7 @@ async def test_user_can_not_retrieve_own_profile_if_wrong_token(
 
 @pytest.mark.asyncio
 async def test_user_can_retrieve_own_profile(
-        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, token: str
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, tokens: (str, str)
 ) -> None:
     response = await authorized_client.get(initialized_app.url_path_for("user:get-user"))
     assert response.status_code == status.HTTP_200_OK
@@ -82,11 +82,7 @@ async def test_user_can_retrieve_own_profile(
 
 @pytest.mark.asyncio
 async def test_user_can_update_username_on_own_profile(
-        initialized_app: FastAPI,
-        authorized_client: AsyncClient,
-        test_user: User,
-        token: str,
-        session,
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, tokens: (str, str), session,
 ) -> None:
     username = "new_username"
 
@@ -108,11 +104,7 @@ async def test_user_can_update_username_on_own_profile(
 
 @pytest.mark.asyncio
 async def test_user_can_update_phone_on_own_profile(
-        initialized_app: FastAPI,
-        authorized_client: AsyncClient,
-        test_user: User,
-        token: str,
-        session,
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, tokens: (str, str), session,
 ) -> None:
     phone = "+375257654322"
 
@@ -134,10 +126,7 @@ async def test_user_can_update_phone_on_own_profile(
 
 @pytest.mark.asyncio
 async def test_user_can_change_password(
-        initialized_app: FastAPI,
-        authorized_client: AsyncClient,
-        test_user: User,
-        session,
+        initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User, session,
 ) -> None:
     password = "new_password"
 

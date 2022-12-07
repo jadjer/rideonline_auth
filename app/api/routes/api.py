@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,10 +14,11 @@
 
 from fastapi import APIRouter
 
-from . import auth, profiles, user
+from . import auth, user, token, profiles
 
 router = APIRouter()
 
 router.include_router(auth.router, tags=["Auth"])
 router.include_router(user.router, tags=["User"], prefix="/user")
+router.include_router(token.router, tags=["Token"], prefix="/token")
 router.include_router(profiles.router, tags=["Profile"], prefix="/profile")
