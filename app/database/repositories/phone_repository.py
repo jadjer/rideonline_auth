@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,14 +23,14 @@ from app.database.repositories.base_repository import BaseRepository
 class PhoneRepository(BaseRepository):
 
     async def create_verification_code_by_phone(self, phone: str) -> str:
-        query = """
-            MERGE (phone:Phone {number: $phone})
-            SET phone.secret=$secret
-        """
-
         secret = random_base32()
 
-        await self.session.run(query, phone=phone, secret=secret)
+        query = f"""
+            MERGE (phone:Phone {{number: "{phone}"}})
+            SET phone.secret = "{secret}"
+        """
+
+        await self.session.run(query)
 
         otp = TOTP(secret)
         verification_code = otp.now()

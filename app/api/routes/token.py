@@ -12,17 +12,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from loguru import logger
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.database import get_repository
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
+from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.token import Token
-from app.models.domain.user import User
-from app.models.schemas.user import UserLogin, UserWithTokenResponse
+from app.models.schemas.user import UserLogin
 from app.models.schemas.wrapper import WrapperResponse
 from app.resources import strings
 from app.services.token import create_tokens_for_user, get_user_id_from_refresh_token
@@ -34,6 +32,7 @@ router = APIRouter()
 async def get_token(
         request: UserLogin,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
     user = await user_repository.get_user_by_username(request.username)
@@ -50,26 +49,32 @@ async def get_token(
         secret_key=settings.secret_key.get_secret_value()
     )
 
+    await token_repository.update_token(user.id, token_refresh)
+
     return WrapperResponse(
         payload=Token(token_access=token_access, token_refresh=token_refresh)
     )
 
 
-@router.patch("/refresh", status_code=status.HTTP_200_OK, name="token:refresh-token")
+@router.post("/refresh", status_code=status.HTTP_200_OK, name="token:refresh-token")
 async def refresh_token(
         request: Token,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    try:
-        user_id = get_user_id_from_refresh_token(
-            request.token_access,
-            request.token_refresh,
-            settings.secret_key.get_secret_value()
-        )
-    except ValueError as value_error:
-        logger.error(value_error)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
+    user_id = get_user_id_from_refresh_token(
+        request.token_access,
+        request.token_refresh,
+        settings.secret_key.get_secret_value()
+    )
+
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.WRONG_TOKEN_PAIR)
+
+    user_token = await token_repository.get_token(user_id)
+    if request.token_refresh != user_token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.REFRESH_TOKEN_IS_REVOKED)
 
     user = await user_repository.get_user_by_id(user_id)
     if not user:
@@ -81,6 +86,8 @@ async def refresh_token(
         phone=user.phone,
         secret_key=settings.secret_key.get_secret_value()
     )
+
+    await token_repository.update_token(user.id, token_refresh)
 
     return WrapperResponse(
         payload=Token(token_access=token_access, token_refresh=token_refresh)

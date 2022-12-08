@@ -31,5 +31,7 @@ VERIFICATION_CODE_IS_WRONG = "Verification code is wrong"
 
 WRONG_TOKEN_PREFIX = "Unsupported authorization type"  # noqa: S105
 MALFORMED_PAYLOAD = "Could not validate credentials"
+WRONG_TOKEN_PAIR = "Wrong token pair"
+REFRESH_TOKEN_IS_REVOKED = "Refresh token is revoked"
 
 AUTHENTICATION_REQUIRED = "Authentication required"
