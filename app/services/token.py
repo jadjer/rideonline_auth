@@ -73,33 +73,36 @@ def create_tokens_for_user(user_id: int, username: str, phone: str, secret_key: 
     return token_access, token_refresh
 
 
-def get_data_from_access_token(token: str, secret_key: str, subject: str) -> dict:
+def get_user_id_from_access_token(access_token: str, secret_key: str) -> int | None:
     try:
-        return jwt.decode(token, secret_key, algorithms=[ALGORITHM], subject=subject)
-    except JWTError as decode_error:
-        raise ValueError("unable to decode JWT token") from decode_error
-    except ValidationError as validation_error:
-        raise ValueError("malformed payload in token") from validation_error
+        token_date = jwt.decode(
+            access_token, secret_key, algorithms=[ALGORITHM], subject=JWT_ACCESS_SUBJECT
+        )
+        user_data = JWTUser(**token_date)
+    except JWTError:
+        return None
+    except ValidationError:
+        return None
+    except ValueError:
+        return None
+
+    user_id = user_data.user_id
+    return user_id
 
 
-def get_data_from_refresh_token(token: str, secret_key: str, subject: str, access_token: str) -> dict:
+def get_user_id_from_refresh_token(access_token: str, refresh_token: str, secret_key: str) -> int | None:
     try:
-        return jwt.decode(token, secret_key, algorithms=[ALGORITHM], subject=subject, access_token=access_token)
-    except JWTError as decode_error:
-        raise ValueError("unable to decode JWT token") from decode_error
-    except ValidationError as validation_error:
-        raise ValueError("malformed payload in token") from validation_error
+        token_date = jwt.decode(
+            refresh_token, secret_key, algorithms=[ALGORITHM], subject=JWT_REFRESH_SUBJECT, access_token=access_token
+        )
+        user_data = JWTUser(**token_date)
+    except JWTError:
+        return None
+    except ValidationError:
+        return None
+    except ValueError:
+        return None
 
+    user_id = user_data.user_id
 
-def get_user_id_from_access_token(access_token: str, secret_key: str) -> int:
-    user_data = JWTUser(
-        **get_data_from_access_token(access_token, secret_key, JWT_ACCESS_SUBJECT)
-    )
-    return user_data.user_id
-
-
-def get_user_id_from_refresh_token(access_token: str, refresh_token: str, secret_key: str) -> int:
-    user_data = JWTUser(
-        **get_data_from_refresh_token(refresh_token, secret_key, JWT_REFRESH_SUBJECT, access_token=access_token)
-    )
-    return user_data.user_id
+    return user_id

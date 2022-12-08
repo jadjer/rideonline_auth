@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ from httpx import AsyncClient
 from neo4j import AsyncDriver, AsyncSession, AsyncTransaction
 
 from app.core.settings.app import AppSettings
+from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.profile_repository import ProfileRepository
 from app.models.domain.user import User
@@ -98,13 +99,21 @@ def authorization_prefix(settings: AppSettings) -> str:
     return settings.jwt_token_prefix
 
 
-@pytest.fixture
-def tokens(settings: AppSettings, test_user: User) -> (str, str):
+@pytest_asyncio.fixture
+async def tokens(settings: AppSettings, session, test_user: User) -> (str, str):
     from app.services.token import create_tokens_for_user
 
-    return create_tokens_for_user(
-        test_user.id, test_user.username, test_user.phone, settings.secret_key.get_secret_value()
+    token_access, token_refresh = create_tokens_for_user(
+        test_user.id,
+        test_user.username,
+        test_user.phone,
+        settings.secret_key.get_secret_value()
     )
+
+    token_repository = TokenRepository(session)
+    await token_repository.update_token(test_user.id, token_refresh)
+
+    return token_access, token_refresh
 
 
 @pytest.fixture

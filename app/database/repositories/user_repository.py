@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,17 +25,20 @@ from app.models.domain.user import User, UserInDB
 class UserRepository(BaseRepository):
 
     async def create_user_by_phone(self, phone: str, *, username: str, password: str, **kwargs) -> Optional[UserInDB]:
-        query = """
-            MERGE (phone:Phone { number: $phone })
-            CREATE (user:User { username: $username, password: $password, salt: $salt, is_blocked: $is_blocked })
-            CREATE (phone)-[:Attached]->(user)
-            RETURN id(user) AS user_id, user, phone
-        """
-
         user = UserInDB(username=username, phone=phone)
         user.change_password(password)
 
-        result: AsyncResult = await self.session.run(query, user.dict())
+        query = f"""
+            MERGE (phone:Phone {{number: "{phone}"}})
+            CREATE (phone)-[:Attached]->(user:User)
+            SET user.username = "{user.username}"
+            SET user.salt = "{user.salt}"
+            SET user.password = "{user.password}"
+            SET user.is_blocked = "{user.is_blocked}"
+            RETURN id(user) AS user_id
+        """
+
+        result: AsyncResult = await self.session.run(query)
 
         try:
             record: Record | None = await result.single()
@@ -55,23 +58,12 @@ class UserRepository(BaseRepository):
         query = f"""
             MATCH (phone:Phone)-[:Attached]->(user:User)
             WHERE id(user) = {user_id}
-            RETURN user, phone
+            RETURN id(user) AS user_id, user, phone
         """
 
         result: AsyncResult = await self.session.run(query)
         record: Record | None = await result.single()
-
-        if not record:
-            return None
-
-        user = UserInDB(
-            id=user_id,
-            phone=record["phone"]["number"],
-            username=record["user"]["username"],
-            password=record["user"]["password"],
-            salt=record["user"]["salt"],
-            is_blocked=record["user"]["is_blocked"],
-        )
+        user: UserInDB = self._get_user_from_record(record)
 
         return user
 
@@ -84,18 +76,7 @@ class UserRepository(BaseRepository):
 
         result: AsyncResult = await self.session.run(query)
         record: Record | None = await result.single()
-
-        if not record:
-            return None
-
-        user = UserInDB(
-            id=record["user_id"],
-            phone=record["phone"]["number"],
-            username=username,
-            password=record["user"]["password"],
-            salt=record["user"]["salt"],
-            is_blocked=record["user"]["is_blocked"],
-        )
+        user: UserInDB = self._get_user_from_record(record)
 
         return user
 
@@ -128,12 +109,28 @@ class UserRepository(BaseRepository):
         query = f"""
             MATCH (phone:Phone)-[:Attached]->(user:User)
             WHERE id(user) = {user_id}
-            SET user.username = $username
-            SET user.salt = $salt
-            SET user.password = $password
-            SET phone.number = $phone
+            SET user.username = "{user.username}"
+            SET user.salt = "{user.salt}"
+            SET user.password = "{user.password}"
+            SET phone.number = "{user.phone}"
         """
 
-        await self.session.run(query, user.__dict__)
+        await self.session.run(query)
 
         return await self.get_user_by_id(user_id)
+
+    @staticmethod
+    def _get_user_from_record(record: Record) -> UserInDB | None:
+        if not record:
+            return None
+
+        user = UserInDB(
+            id=record["user_id"],
+            phone=record["phone"]["number"],
+            username=record["user"]["username"],
+            password=record["user"]["password"],
+            salt=record["user"]["salt"],
+            is_blocked=record["user"]["is_blocked"],
+        )
+
+        return user

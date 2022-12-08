@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,19 +105,3 @@ def test_retrieving_refresh_token_from_user(test_user: User):
 
     user_id = get_user_id_from_refresh_token(token_access, token_refresh, "secret")
     assert user_id == test_user.id
-
-
-def test_error_when_wrong_token():
-    with pytest.raises(ValueError):
-        get_user_id_from_access_token("asdf", "asdf")
-
-
-def test_error_when_wrong_token_shape():
-    token = create_access_token(
-        data={"content": "payload"},
-        secret_key="secret",
-        subject=JWT_ACCESS_SUBJECT,
-        expires_delta=timedelta(minutes=1),
-    )
-    with pytest.raises(ValueError):
-        get_user_id_from_access_token(token, "secret")

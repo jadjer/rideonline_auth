@@ -53,10 +53,8 @@ async def _get_user_id_from_token(
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
 ) -> int:
-    try:
-        user_id = get_user_id_from_access_token(token, settings.secret_key.get_secret_value())
-    except ValueError as exception:
-        logger.error(exception)
+    user_id = get_user_id_from_access_token(token, settings.secret_key.get_secret_value())
+    if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
 
     return user_id
