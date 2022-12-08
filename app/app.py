@@ -28,10 +28,7 @@ def get_application() -> FastAPI:
     settings = get_app_settings()
     settings.configure_logging()
 
-    if settings.debug:
-        application = FastAPI(**settings.fastapi_kwargs)
-    else:
-        application = FastAPI(docs_url=None, redoc_url=None)
+    application = FastAPI(**settings.fastapi_kwargs)
 
     application.add_middleware(
         CORSMiddleware,
