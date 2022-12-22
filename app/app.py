@@ -52,10 +52,6 @@ def get_application() -> FastAPI:
 
     application.include_router(api_router, prefix=settings.api_prefix)
 
-    @application.get("/")
-    async def health():
-        return {"health": randrange(100000, 999999)}
-
     return application
 
 

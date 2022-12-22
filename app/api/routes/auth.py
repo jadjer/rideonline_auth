@@ -41,14 +41,16 @@ async def get_verification_code(
         request: PhoneVerification,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
-) -> None:
+) -> WrapperResponse:
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
 
     code = await phone_repository.create_verification_code_by_phone(request.phone)
 
-    if not await send_verify_code_to_phone(settings.sms_server, request.phone, code):
+    if not await send_verify_code_to_phone(settings.sms_service, request.phone, code):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
+
+    return WrapperResponse()
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, name="auth:register")
