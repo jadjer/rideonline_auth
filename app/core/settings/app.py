@@ -37,7 +37,7 @@ class AppSettings(BaseAppSettings):
     database_user: str
     database_pass: str
 
-    sms_server: HttpUrl
+    sms_service: HttpUrl
 
     secret_key: SecretStr
 
