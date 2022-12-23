@@ -22,8 +22,9 @@ from app.database.repositories.base_repository import BaseRepository
 
 class PhoneRepository(BaseRepository):
 
-    async def create_verification_code_by_phone(self, phone: str) -> str:
-        secret = random_base32()
+    async def create_verification_code_by_phone(self, phone: str) -> (str, str):
+        secret: str = random_base32()
+        token: str = random_base32()
 
         query = f"""
             MERGE (phone:Phone {{number: "{phone}"}})
@@ -32,14 +33,12 @@ class PhoneRepository(BaseRepository):
 
         await self.session.run(query)
 
-        otp = TOTP(secret)
+        otp = TOTP(secret + token)
         verification_code = otp.now()
 
-        print(f"Code: {verification_code} for {phone}")
+        return verification_code, token
 
-        return verification_code
-
-    async def verify_code_by_phone(self, phone: str, verification_code: int) -> bool:
+    async def verify_phone_by_code_and_token(self, phone: str, verification_code: int, token: str) -> bool:
         query = f"""
             MATCH (phone:Phone)
             WHERE phone.number = "{phone}"
@@ -53,8 +52,9 @@ class PhoneRepository(BaseRepository):
             logger.warning("Query result is empty")
             return False
 
-        secret = record["secret"]
-        otp = TOTP(secret)
+        secret: str = record["secret"]
+
+        otp = TOTP(secret + token)
 
         is_valid = otp.verify(str(verification_code))
         if is_valid:

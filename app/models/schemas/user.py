@@ -19,20 +19,17 @@ from app.models.domain.token import Token
 from app.models.domain.user import User
 
 
-class PhoneVerification(BaseModel):
-    phone: str
-
-
 class UserLogin(BaseModel):
     username: str
     password: str
 
 
 class UserCreate(BaseModel):
-    username: str
     phone: str
+    username: str
     password: str
     verification_code: int
+    phone_token: str
 
 
 class UserUpdate(BaseModel):
@@ -40,6 +37,7 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     password: Optional[str] = None
     verification_code: int
+    phone_token: str
 
 
 class UserResponse(BaseModel):

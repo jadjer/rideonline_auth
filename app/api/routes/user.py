@@ -53,7 +53,9 @@ async def update_user(
         if await phone_repository.is_attached_by_phone(request.phone):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
 
-        if not await phone_repository.verify_code_by_phone(request.phone, request.verification_code):
+        if not await phone_repository.verify_phone_by_code_and_token(
+                request.phone, request.verification_code, request.phone_token,
+        ):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
     if request.username and request.username != user.username:
@@ -61,7 +63,9 @@ async def update_user(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
     if not request.phone:
-        if not await phone_repository.verify_code_by_phone(user.phone, request.verification_code):
+        if not await phone_repository.verify_phone_by_code_and_token(
+                user.phone, request.verification_code, request.phone_token
+        ):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
     user: User = await user_repository.update_user_by_user_id(user.id, **request.__dict__)

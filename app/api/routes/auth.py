@@ -19,11 +19,14 @@ from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
+from app.models.schemas.phone import (
+    PhoneVerification,
+    PhoneToken,
+)
 from app.models.schemas.user import (
     UserCreate,
     UserLogin,
     UserWithTokenResponse,
-    PhoneVerification,
     Token,
 )
 from app.models.schemas.wrapper import WrapperResponse
@@ -45,12 +48,16 @@ async def get_verification_code(
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
 
-    code = await phone_repository.create_verification_code_by_phone(request.phone)
+    verification_code, token = await phone_repository.create_verification_code_by_phone(request.phone)
 
-    if not await send_verify_code_to_phone(settings.sms_service, request.phone, code):
+    if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_code):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
 
-    return WrapperResponse()
+    return WrapperResponse(
+        payload=PhoneToken(
+            token=token
+        )
+    )
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED, name="auth:register")
@@ -66,7 +73,9 @@ async def register(
     if await phone_repository.is_attached_by_phone(request.phone):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
 
-    if not await phone_repository.verify_code_by_phone(request.phone, request.verification_code):
+    if not await phone_repository.verify_phone_by_code_and_token(
+            request.phone, request.verification_code, request.phone_token,
+    ):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
     user = await user_repository.create_user_by_phone(**request.__dict__)
