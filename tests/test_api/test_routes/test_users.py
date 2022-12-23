@@ -87,11 +87,15 @@ async def test_user_can_update_username_on_own_profile(
     username = "new_username"
 
     phone_repository = PhoneRepository(session)
-    verification_code = await phone_repository.create_verification_code_by_phone(test_user.phone)
+    verification_code, token = await phone_repository.create_verification_code_by_phone(test_user.phone)
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
-        json={"username": username, "verification_code": verification_code},
+        json={
+            "username": username,
+            "verification_code": verification_code,
+            "phone_token": token,
+        },
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -109,11 +113,15 @@ async def test_user_can_update_phone_on_own_profile(
     phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
-    verification_code = await phone_repository.create_verification_code_by_phone(phone)
+    verification_code, token = await phone_repository.create_verification_code_by_phone(phone)
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
-        json={"phone": phone, "verification_code": verification_code},
+        json={
+            "phone": phone,
+            "verification_code": verification_code,
+            "phone_token": token,
+        },
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -131,13 +139,14 @@ async def test_user_can_change_password(
     password = "new_password"
 
     phone_repository = PhoneRepository(session)
-    verification_code = await phone_repository.create_verification_code_by_phone(test_user.phone)
+    verification_code, token = await phone_repository.create_verification_code_by_phone(test_user.phone)
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
         json={
             "password": password,
-            "verification_code": verification_code
+            "verification_code": verification_code,
+            "phone_token": token,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -179,13 +188,14 @@ async def test_user_can_not_take_already_used_credentials(
     await user_repository.create_user_by_phone(**user_dict)
 
     phone_repository = PhoneRepository(session)
-    verification_code = await phone_repository.create_verification_code_by_phone(user_dict["phone"])
+    verification_code, token = await phone_repository.create_verification_code_by_phone(user_dict["phone"])
 
     response = await authorized_client.patch(
         initialized_app.url_path_for("user:update-user"),
         json={
             credentials_part: credentials_value,
-            "verification_code": verification_code
+            "verification_code": verification_code,
+            "phone_token": token,
         },
     )
     assert response.status_code == status.HTTP_409_CONFLICT

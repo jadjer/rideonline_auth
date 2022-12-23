@@ -27,7 +27,7 @@ async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, code: str)
     print(request_json)
 
     async with AsyncClient(base_url=sms_service, headers=headers) as client:
-        response = await client.post("/send", data=request_json)
+        response = await client.post("/send", json=request_json)
         if response.status_code == 200:
             return True
 
