@@ -15,19 +15,18 @@
 from httpx import AsyncClient
 from pydantic import HttpUrl
 
-from app.models.schemas.sms import SmsRequest
-
 
 async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, code: str) -> bool:
-    headers = {"Content-Type": "application/json"}
-    request = SmsRequest(phone=phone, message=f"Your verification code is {code}")
-    request_json = request.json()
-
-    print(sms_service)
-    print(request_json)
+    headers = {
+        "Content-Type": "application/json"
+    }
+    request = {
+        "phone": phone,
+        "message": f"Your verification code is {code}",
+    }
 
     async with AsyncClient(base_url=sms_service, headers=headers) as client:
-        response = await client.post("/send", json=request_json)
+        response = await client.post("/send", json=request)
         if response.status_code == 200:
             return True
 
