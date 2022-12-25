@@ -86,4 +86,4 @@ async def test_failed_user_registration_when_some_credentials_are_taken(
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
 
-    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
