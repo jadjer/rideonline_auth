@@ -20,6 +20,7 @@ from httpx import AsyncClient
 from neo4j import AsyncDriver, AsyncSession, AsyncTransaction
 
 from app.core.settings.app import AppSettings
+from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.profile_repository import ProfileRepository
@@ -85,9 +86,28 @@ async def client(app: FastAPI) -> AsyncClient:
 
 @pytest_asyncio.fixture
 async def test_user(session) -> User:
-    user_repository = UserRepository(session)
+    phone = "+375257654321"
 
-    user = await user_repository.create_user_by_phone("+375257654321", username="username", password="password")
+    phone_repository = PhoneRepository(session)
+    await phone_repository.create_verification_code_by_phone(phone)
+
+    user_repository = UserRepository(session)
+    user = await user_repository.create_user_by_phone(phone, username="username", password="password")
+    if not user:
+        pytest.raises(Exception)
+
+    return user
+
+
+@pytest_asyncio.fixture
+async def test_other_user(session) -> User:
+    phone = "+375257654322"
+
+    phone_repository = PhoneRepository(session)
+    await phone_repository.create_verification_code_by_phone(phone)
+
+    user_repository = UserRepository(session)
+    user = await user_repository.create_user_by_phone(phone, username="other_username", password="password")
     if not user:
         pytest.raises(Exception)
 

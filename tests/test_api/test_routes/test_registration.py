@@ -19,7 +19,7 @@ from httpx import AsyncClient
 
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.phone_repository import PhoneRepository
-from app.models.domain.user import User, UserInDB
+from app.models.domain.user import User
 from app.models.schemas.wrapper import WrapperResponse
 
 
@@ -55,22 +55,13 @@ async def test_user_success_registration(initialized_app: FastAPI, client: Async
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "credentials_part, credentials_value",
-    (
-            ("username", "free_username"),
-            ("phone", "+375257654322")
-    ),
-)
-async def test_failed_user_registration_when_some_credentials_are_taken(
+async def test_failed_user_registration_when_username_are_taken(
         initialized_app: FastAPI,
         client: AsyncClient,
         test_user: User,
         session,
-        credentials_part: str,
-        credentials_value: str,
 ) -> None:
-    phone = "+375257654321"
+    phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
     verification_code, token = await phone_repository.create_verification_code_by_phone(phone)
@@ -81,9 +72,33 @@ async def test_failed_user_registration_when_some_credentials_are_taken(
         "password": "password",
         "verification_code": verification_code,
         "phone_token": token,
-        credentials_part: credentials_value,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
 
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_409_CONFLICT
+
+
+@pytest.mark.asyncio
+async def test_failed_user_registration_when_phone_are_taken(
+        initialized_app: FastAPI,
+        client: AsyncClient,
+        test_user: User,
+        session,
+) -> None:
+    phone = "+375257654321"
+
+    phone_repository = PhoneRepository(session)
+    verification_code, token = await phone_repository.create_verification_code_by_phone(phone)
+
+    registration_json = {
+        "phone": phone,
+        "username": "free_username",
+        "password": "password",
+        "verification_code": verification_code,
+        "phone_token": token,
+    }
+
+    response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
+
+    assert response.status_code == status.HTTP_409_CONFLICT

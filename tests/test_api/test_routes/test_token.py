@@ -32,7 +32,10 @@ async def test_user_can_get_new_tokens(
 
     response = await client.post(
         initialized_app.url_path_for("token:get-token"),
-        json={"username": username, "password": password},
+        json={
+            "username": username,
+            "password": password,
+        },
     )
     assert response.status_code == status.HTTP_200_OK
 
@@ -47,7 +50,10 @@ async def test_user_can_not_get_new_tokens_for_wrong_credentials(
 
     response = await client.post(
         initialized_app.url_path_for("token:get-token"),
-        json={"username": username, "password": password},
+        json={
+            "username": username,
+            "password": password,
+        },
     )
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -62,7 +68,10 @@ async def test_user_refresh_token(
 
     response = await client.post(
         initialized_app.url_path_for("token:refresh-token"),
-        json={"token_access": token_access, "token_refresh": token_refresh},
+        json={
+            "token_access": token_access,
+            "token_refresh": token_refresh,
+        },
     )
 
     assert response.status_code == status.HTTP_200_OK

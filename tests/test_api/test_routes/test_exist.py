@@ -30,8 +30,8 @@ async def test_username_exists(initialized_app: FastAPI, client: AsyncClient, te
 
 
 @pytest.mark.asyncio
-async def test_username_does_not_exist(initialized_app: FastAPI, client: AsyncClient, test_user: User):
-    request_json = {"username": "username1"}
+async def test_username_does_not_exist(initialized_app: FastAPI, client: AsyncClient):
+    request_json = {"username": "username"}
 
     response = await client.post(initialized_app.url_path_for("exist:username"), json=request_json)
 
@@ -48,8 +48,8 @@ async def test_phone_exists(initialized_app: FastAPI, client: AsyncClient, test_
 
 
 @pytest.mark.asyncio
-async def test_phone_does_not_exist(initialized_app: FastAPI, client: AsyncClient, test_user: User):
-    request_json = {"phone": "+375257654322"}
+async def test_phone_does_not_exist(initialized_app: FastAPI, client: AsyncClient):
+    request_json = {"phone": "+375257654321"}
 
     response = await client.post(initialized_app.url_path_for("exist:phone"), json=request_json)
 
