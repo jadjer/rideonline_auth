@@ -19,8 +19,10 @@ PROFILE_DOES_NOT_EXISTS = "Profile does not exists"
 
 INCORRECT_LOGIN_INPUT = "incorrect username or password"
 USERNAME_TAKEN = "User with this username already exists"
+USERNAME_DOES_NOT_EXIST = "User with this username does not exist"
 EMAIL_TAKEN = "User with this email already exists"
 PHONE_NUMBER_TAKEN = "User with this phone already exists"
+PHONE_NUMBER_DOES_NOT_EXIST = "Phone number does not exist"
 PHONE_NUMBER_INVALID_ERROR = "Invalid phone number"
 
 SMS_SERVICE_TEMPORARY_UNAVAILABLE = "Phone validation service temporary unavailable"
