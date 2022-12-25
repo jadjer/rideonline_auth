@@ -33,7 +33,7 @@ class PhoneRepository(BaseRepository):
 
         await self.session.run(query)
 
-        otp = TOTP(secret + token)
+        otp = TOTP(secret + token, interval=300, name=phone)
         verification_code = otp.now()
 
         return verification_code, token
@@ -54,7 +54,7 @@ class PhoneRepository(BaseRepository):
 
         secret: str = record["secret"]
 
-        otp = TOTP(secret + token)
+        otp = TOTP(secret + token, interval=300, name=phone)
 
         is_valid = otp.verify(str(verification_code))
         if is_valid:

@@ -14,32 +14,18 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.config import get_app_settings
-from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
-from app.models.domain.user import User
-from app.models.schemas.phone import (
-    PhoneVerification,
-    PhoneToken, Phone,
-)
-from app.models.schemas.user import (
-    UserCreate,
-    UserLogin,
-    UserWithTokenResponse,
-    Token, Username,
-)
+from app.models.schemas.phone import Phone
+from app.models.schemas.user import Username
 from app.models.schemas.wrapper import WrapperResponse
-from app.services.token import create_tokens_for_user
-from app.services.validate import check_phone_is_valid
-from app.services.sms import send_verify_code_to_phone
 from app.api.dependencies.database import get_repository
 from app.resources import strings
 
 router = APIRouter()
 
 
-@router.post("/useranme", status_code=status.HTTP_200_OK, name="exist:username")
+@router.post("/username", status_code=status.HTTP_200_OK, name="exist:username")
 async def exist_username(
         request: Username,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),

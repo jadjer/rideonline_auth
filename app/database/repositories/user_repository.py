@@ -29,7 +29,8 @@ class UserRepository(BaseRepository):
         user.change_password(password)
 
         query = f"""
-            MERGE (phone:Phone {{number: "{phone}"}})
+            MATCH (phone:Phone)
+            WHERE phone.number = "{phone}"
             CREATE (phone)-[:Attached]->(user:User)
             SET user.username = "{user.username}"
             SET user.salt = "{user.salt}"
@@ -80,6 +81,19 @@ class UserRepository(BaseRepository):
 
         return user
 
+    async def get_user_by_phone(self, phone: str) -> Optional[UserInDB]:
+        query = f"""
+            MATCH (phone:Phone)-[:Attached]->(user:User)
+            WHERE phone.number = "{phone}"
+            RETURN id(user) AS user_id, user, phone
+        """
+
+        result: AsyncResult = await self.session.run(query)
+        record: Record | None = await result.single()
+        user: UserInDB = self._get_user_from_record(record)
+
+        return user
+
     async def is_exists(self, username: str) -> bool:
         user: User | None = await self.get_user_by_username(username)
         if user:
@@ -92,7 +106,6 @@ class UserRepository(BaseRepository):
             user_id: int,
             *,
             username: Optional[str] = None,
-            phone: Optional[str] = None,
             password: Optional[str] = None,
             **kwargs
     ) -> Optional[UserInDB]:
@@ -101,18 +114,36 @@ class UserRepository(BaseRepository):
             return user
 
         user.username = username or user.username
-        user.phone = phone or user.phone
 
         if password:
             user.change_password(password)
 
         query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User)
-            WHERE id(user) = {user_id}
+            MATCH (user:User)
+            WHERE id(user) = {user.id}
             SET user.username = "{user.username}"
             SET user.salt = "{user.salt}"
             SET user.password = "{user.password}"
-            SET phone.number = "{user.phone}"
+        """
+
+        await self.session.run(query)
+
+        return await self.get_user_by_id(user.id)
+
+    async def change_user_phone_by_user_id(
+            self,
+            user_id: int,
+            *,
+            phone: str,
+            **kwargs
+    ):
+        query = f"""
+            MATCH (phone:Phone)-[r:Attached]->(user:User)
+            WHERE id(user) = {user_id}
+            MATCH (newPhone:Phone)
+            WHERE newPhone.number = "{phone}"
+            CREATE (newPhone)-[:Attached]->(user)
+            DELETE r
         """
 
         await self.session.run(query)
