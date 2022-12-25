@@ -15,6 +15,10 @@
 from pydantic import BaseModel
 
 
+class Phone(BaseModel):
+    phone: str
+
+
 class PhoneVerification(BaseModel):
     phone: str
 

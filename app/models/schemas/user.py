@@ -19,6 +19,10 @@ from app.models.domain.token import Token
 from app.models.domain.user import User
 
 
+class Username(BaseModel):
+    username: str
+
+
 class UserLogin(BaseModel):
     username: str
     password: str
