@@ -67,16 +67,16 @@ async def register(
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    if await user_repository.is_exists(request.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
-
-    if await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
-
     if not await phone_repository.verify_phone_by_code_and_token(
             request.phone, request.verification_code, request.phone_token,
     ):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+
+    if await phone_repository.is_attached_by_phone(request.phone):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
+
+    if await user_repository.is_exists(request.username):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
     user = await user_repository.create_user_by_phone(**request.__dict__)
     if not user:
