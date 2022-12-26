@@ -19,9 +19,5 @@ class Phone(BaseModel):
     phone: str
 
 
-class PhoneVerification(BaseModel):
-    phone: str
-
-
 class PhoneToken(BaseModel):
-    token: str
+    phone_token: str

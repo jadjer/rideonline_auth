@@ -20,7 +20,7 @@ from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
 from app.models.schemas.phone import (
-    PhoneVerification,
+    Phone,
     PhoneToken,
 )
 from app.models.schemas.user import (
@@ -42,21 +42,21 @@ router = APIRouter()
 
 @router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
-        request: PhoneVerification,
+        request: Phone,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
 
-    verification_code, token = await phone_repository.create_verification_code_by_phone(request.phone)
+    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(request.phone)
 
     if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_code):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
 
     return WrapperResponse(
         payload=PhoneToken(
-            token=token
+            phone_token=phone_token
         )
     )
 

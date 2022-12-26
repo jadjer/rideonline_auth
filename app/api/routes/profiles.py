@@ -66,7 +66,7 @@ async def get_profile_by_id(
     )
 
 
-@router.patch("", status_code=status.HTTP_200_OK, name="profiles:update-profile")
+@router.patch("", status_code=status.HTTP_200_OK, name="profiles:update-my-profile")
 async def update_profile(
         request: ProfileUpdate,
         user: User = Depends(get_current_user_authorizer()),
