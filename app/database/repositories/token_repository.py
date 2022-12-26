@@ -17,7 +17,6 @@ from app.database.repositories.base_repository import BaseRepository
 
 
 class TokenRepository(BaseRepository):
-
     async def get_token(self, user_id: int) -> str | None:
         query = f"""
             MATCH (user:User)

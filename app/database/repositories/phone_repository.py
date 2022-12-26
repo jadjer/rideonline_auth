@@ -21,7 +21,6 @@ from app.database.repositories.base_repository import BaseRepository
 
 
 class PhoneRepository(BaseRepository):
-
     async def create_verification_code_by_phone(self, phone: str) -> (str, str):
         secret: str = random_base32()
         token: str = random_base32()

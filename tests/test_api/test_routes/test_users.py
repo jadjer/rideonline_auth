@@ -115,14 +115,14 @@ async def test_user_can_update_phone_on_own_profile(
     new_phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
-    verification_code, token = await phone_repository.create_verification_code_by_phone(new_phone)
+    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(new_phone)
 
     response = await authorized_client.post(
         initialized_app.url_path_for("user:change-phone"),
         json={
             "phone": new_phone,
             "verification_code": verification_code,
-            "phone_token": token,
+            "phone_token": phone_token,
         },
     )
     assert response.status_code == status.HTTP_200_OK
@@ -192,14 +192,14 @@ async def test_user_can_not_take_already_used_phone(
     phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
-    verification_code, token = await phone_repository.create_verification_code_by_phone(phone)
+    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
 
     response = await authorized_client.post(
         initialized_app.url_path_for("user:change-phone"),
         json={
             "phone": phone,
             "verification_code": verification_code,
-            "phone_token": token,
+            "phone_token": phone_token,
         },
     )
     assert response.status_code == status.HTTP_409_CONFLICT

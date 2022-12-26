@@ -23,7 +23,6 @@ from app.models.domain.user import User, UserInDB
 
 
 class UserRepository(BaseRepository):
-
     async def create_user_by_phone(self, phone: str, *, username: str, password: str, **kwargs) -> Optional[UserInDB]:
         user = UserInDB(username=username, phone=phone)
         user.change_password(password)
