@@ -22,7 +22,6 @@ from app.models.domain.profile import Profile, Gender
 
 
 class ProfileRepository(BaseRepository):
-
     async def get_profile_by_id(self, user_id: int) -> Optional[Profile]:
         query = f"""
             MATCH (user:User)
