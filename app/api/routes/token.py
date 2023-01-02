@@ -28,7 +28,7 @@ from app.services.token import create_tokens_for_user, get_user_id_from_refresh_
 router = APIRouter()
 
 
-@router.post("/get", status_code=status.HTTP_200_OK, name="token:get-token")
+@router.post("/get", status_code=status.HTTP_200_OK, name="tokens:get-token")
 async def get_token(
         request: UserLogin,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
@@ -56,7 +56,7 @@ async def get_token(
     )
 
 
-@router.post("/refresh", status_code=status.HTTP_200_OK, name="token:refresh-token")
+@router.post("/refresh", status_code=status.HTTP_200_OK, name="tokens:refresh-token")
 async def refresh_token(
         request: Token,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),

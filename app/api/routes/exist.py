@@ -25,7 +25,7 @@ from app.resources import strings
 router = APIRouter()
 
 
-@router.post("/username", status_code=status.HTTP_200_OK, name="exist:username")
+@router.post("/username", status_code=status.HTTP_200_OK, name="exists:username")
 async def exist_username(
         request: Username,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
@@ -36,7 +36,7 @@ async def exist_username(
     return WrapperResponse()
 
 
-@router.post("/phone", status_code=status.HTTP_200_OK, name="exist:phone")
+@router.post("/phone", status_code=status.HTTP_200_OK, name="exists:phone")
 async def exist_phone(
         request: Phone,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),

@@ -26,7 +26,7 @@ async def test_unable_to_login_with_wrong_jwt_prefix(
 ) -> None:
     token_access, _ = tokens
     response = await client.get(
-        app.url_path_for("user:get-user"),
+        app.url_path_for("users:get-user"),
         headers={"Authorization": f"WrongPrefix {token_access}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -43,7 +43,7 @@ async def test_unable_to_login_when_user_does_not_exist_any_more(
         secret_key="secret",
     )
     response = await client.get(
-        app.url_path_for("user:get-user"),
+        app.url_path_for("users:get-user"),
         headers={"Authorization": f"{authorization_prefix} {token_access}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
