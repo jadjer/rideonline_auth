@@ -26,7 +26,7 @@ from app.resources import strings
 router = APIRouter()
 
 
-@router.get("", status_code=status.HTTP_200_OK, name="user:get-user")
+@router.get("", status_code=status.HTTP_200_OK, name="users:get-user")
 async def get_user(
         user: User = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
@@ -42,7 +42,7 @@ async def get_user(
     )
 
 
-@router.patch("", status_code=status.HTTP_200_OK, name="user:update-user")
+@router.patch("", status_code=status.HTTP_200_OK, name="users:update-user")
 async def update_user(
         request: UserUpdate,
         user: UserInDB = Depends(get_current_user_authorizer()),
@@ -63,7 +63,7 @@ async def update_user(
     )
 
 
-@router.post("/change_phone", status_code=status.HTTP_200_OK, name="user:change-phone")
+@router.post("/change_phone", status_code=status.HTTP_200_OK, name="users:change-phone")
 async def change_phone(
         request: UserChangePhone,
         user: UserInDB = Depends(get_current_user_authorizer()),

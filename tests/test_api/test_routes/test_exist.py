@@ -24,7 +24,7 @@ from app.models.domain.user import User
 async def test_username_exists(initialized_app: FastAPI, client: AsyncClient, test_user: User):
     request_json = {"username": "username"}
 
-    response = await client.post(initialized_app.url_path_for("exist:username"), json=request_json)
+    response = await client.post(initialized_app.url_path_for("exists:username"), json=request_json)
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -33,7 +33,7 @@ async def test_username_exists(initialized_app: FastAPI, client: AsyncClient, te
 async def test_username_does_not_exist(initialized_app: FastAPI, client: AsyncClient):
     request_json = {"username": "username"}
 
-    response = await client.post(initialized_app.url_path_for("exist:username"), json=request_json)
+    response = await client.post(initialized_app.url_path_for("exists:username"), json=request_json)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -42,7 +42,7 @@ async def test_username_does_not_exist(initialized_app: FastAPI, client: AsyncCl
 async def test_phone_exists(initialized_app: FastAPI, client: AsyncClient, test_user: User):
     request_json = {"phone": "+375257654321"}
 
-    response = await client.post(initialized_app.url_path_for("exist:phone"), json=request_json)
+    response = await client.post(initialized_app.url_path_for("exists:phone"), json=request_json)
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -51,6 +51,6 @@ async def test_phone_exists(initialized_app: FastAPI, client: AsyncClient, test_
 async def test_phone_does_not_exist(initialized_app: FastAPI, client: AsyncClient):
     request_json = {"phone": "+375257654321"}
 
-    response = await client.post(initialized_app.url_path_for("exist:phone"), json=request_json)
+    response = await client.post(initialized_app.url_path_for("exists:phone"), json=request_json)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
