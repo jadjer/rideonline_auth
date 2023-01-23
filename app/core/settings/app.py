@@ -15,7 +15,6 @@
 import logging
 import sys
 from typing import Any, Dict, List, Tuple
-
 from loguru import logger
 from pydantic import SecretStr, HttpUrl
 

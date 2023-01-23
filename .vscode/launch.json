@@ -1,0 +1,27 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python: FastAPI",
+			"type": "python",
+			"request": "launch",
+			"module": "uvicorn",
+			"args": [
+				"app.app:app",
+				"--reload",
+			],
+			"jinja": true,
+			"justMyCode": true,
+			"env": {
+				"database_host": "192.168.100.9",
+				"database_user": "neo4j",
+				"database_pass": "Alchogol01",
+				"sms_service": "http://192.168.100.100:8000",
+				"secret_key": "eb780375c5919039daa9b9faf41b335638abf06431be8ba47fc11d3ab0496d17",
+			}
+		}
+	]
+}
