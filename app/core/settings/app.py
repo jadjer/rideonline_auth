@@ -29,8 +29,8 @@ class AppSettings(BaseAppSettings):
     openapi_prefix: str = ""
     openapi_url: str = "/openapi.json"
     redoc_url: str = "/redoc"
-    title: str = "Ride2Online Auth"
-    version: str = "0.1.0"
+    title: str = "Ride Online Auth"
+    version: str = "0.0.0"
 
     database_host: str
     database_port: int = 7687
