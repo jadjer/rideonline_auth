@@ -16,7 +16,7 @@ import logging
 import sys
 from typing import Any, Dict, List, Tuple
 from loguru import logger
-from pydantic import SecretStr, HttpUrl
+from pydantic import FilePath, HttpUrl, IPvAnyAddress
 
 from app.core.logging import InterceptHandler
 from app.core.settings.base import BaseAppSettings
@@ -31,14 +31,18 @@ class AppSettings(BaseAppSettings):
     title: str = "Ride Online Auth"
     version: str = "0.0.0"
 
-    database_host: str
+    database_host: IPvAnyAddress
     database_port: int = 7687
     database_user: str
     database_pass: str
 
     sms_service: HttpUrl
 
-    secret_key: SecretStr
+    public_key_path: FilePath
+    public_key: str = ""
+
+    private_key_path: FilePath
+    private_key: str = ""
 
     api_prefix: str = ""
 

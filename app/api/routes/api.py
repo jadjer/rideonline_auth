@@ -14,12 +14,11 @@
 
 from fastapi import APIRouter
 
-from . import auth, user, token, profiles, exist
+from . import auth, user, profiles, exist
 
 router = APIRouter()
 
 router.include_router(auth.router, tags=["Auth"])
 router.include_router(user.router, tags=["Users"], prefix="/users")
-router.include_router(token.router, tags=["Tokens"], prefix="/tokens")
 router.include_router(profiles.router, tags=["Profiles"], prefix="/profiles")
 router.include_router(exist.router, tags=["Exists"], prefix="/exists")

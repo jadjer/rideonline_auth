@@ -9,6 +9,5 @@ pytest-asyncio
 httpx
 neo4j
 pyotp
-pika
 bcrypt
 passlib

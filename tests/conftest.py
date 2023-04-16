@@ -124,10 +124,9 @@ async def tokens(settings: AppSettings, session, test_user: User) -> (str, str):
     from app.services.token import create_tokens_for_user
 
     token_access, token_refresh = create_tokens_for_user(
-        test_user.id,
-        test_user.username,
-        test_user.phone,
-        settings.secret_key.get_secret_value()
+        user_id=test_user.id,
+        username=test_user.username,
+        secret_key=settings.private_key
     )
 
     token_repository = TokenRepository(session)

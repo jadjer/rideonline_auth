@@ -55,12 +55,7 @@ async def test_user_success_registration(initialized_app: FastAPI, client: Async
 
 
 @pytest.mark.asyncio
-async def test_failed_user_registration_when_username_are_taken(
-        initialized_app: FastAPI,
-        client: AsyncClient,
-        test_user: User,
-        session,
-) -> None:
+async def test_failed_user_registration_when_username_are_taken(initialized_app, client, test_user, session):
     phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
@@ -80,12 +75,7 @@ async def test_failed_user_registration_when_username_are_taken(
 
 
 @pytest.mark.asyncio
-async def test_failed_user_registration_when_phone_are_taken(
-        initialized_app: FastAPI,
-        client: AsyncClient,
-        test_user: User,
-        session,
-) -> None:
+async def test_failed_user_registration_when_phone_are_taken(initialized_app, client, test_user, session):
     phone = "+375257654321"
 
     phone_repository = PhoneRepository(session)
