@@ -24,7 +24,7 @@ from app.models.schemas.wrapper import WrapperResponse
 
 
 @pytest.mark.asyncio
-async def test_user_success_registration(initialized_app: FastAPI, client: AsyncClient, session):
+async def test_user_success_registration(initialized_app, client, session):
     phone = "+375257654321"
     username = "username"
     password = "password"
@@ -55,7 +55,7 @@ async def test_user_success_registration(initialized_app: FastAPI, client: Async
 
 
 @pytest.mark.asyncio
-async def test_failed_user_registration_when_username_are_taken(initialized_app, client, test_user, session):
+async def test_failed_user_registration_when_username_are_taken(initialized_app, client, session, test_user):
     phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)

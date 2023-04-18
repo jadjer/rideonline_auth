@@ -23,9 +23,7 @@ from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
-from app.database.repositories.profile_repository import ProfileRepository
-from app.models.domain.user import User
-from app.models.domain.profile import Gender, Profile
+from app.models.domain.user import Gender, User
 
 
 @pytest.fixture
@@ -56,20 +54,20 @@ def driver(settings: AppSettings) -> AsyncDriver:
 
 
 @pytest_asyncio.fixture
-async def session(driver: AsyncDriver):
-    session: AsyncSession = driver.session()
-    transaction: AsyncTransaction = await session.begin_transaction()
+async def session(driver: AsyncDriver) -> AsyncSession:
+    async_session: AsyncSession = driver.session()
+    transaction: AsyncTransaction = await async_session.begin_transaction()
 
     try:
         yield transaction
 
     finally:
         await transaction.rollback()
-        await session.close()
+        await async_session.close()
 
 
 @pytest.fixture
-def initialized_app(app: FastAPI, session) -> FastAPI:
+def initialized_app(app: FastAPI, session: AsyncSession) -> FastAPI:
     app.state.session = session
     return app
 
@@ -85,14 +83,28 @@ async def client(app: FastAPI) -> AsyncClient:
 
 
 @pytest_asyncio.fixture
-async def test_user(session) -> User:
+async def test_user(session: AsyncSession) -> User:
     phone = "+375257654321"
+    username = "username"
+    password = "password"
+    first_name = "Test"
+    last_name = "User"
+    age = 18
+    gender = Gender.male
 
     phone_repository = PhoneRepository(session)
     await phone_repository.create_verification_code_by_phone(phone)
 
     user_repository = UserRepository(session)
-    user = await user_repository.create_user_by_phone(phone, username="username", password="password")
+    user = await user_repository.create_user(
+        phone,
+        username,
+        password,
+        first_name=first_name,
+        last_name=last_name,
+        age=age,
+        gender=gender
+    )
     if not user:
         pytest.raises(Exception)
 
@@ -100,14 +112,16 @@ async def test_user(session) -> User:
 
 
 @pytest_asyncio.fixture
-async def test_other_user(session) -> User:
+async def test_other_user(session: AsyncSession) -> User:
     phone = "+375257654322"
+    username = "other_username"
+    password = "password"
 
     phone_repository = PhoneRepository(session)
     await phone_repository.create_verification_code_by_phone(phone)
 
     user_repository = UserRepository(session)
-    user = await user_repository.create_user_by_phone(phone, username="other_username", password="password")
+    user = await user_repository.create_user(phone, username, password)
     if not user:
         pytest.raises(Exception)
 
@@ -120,7 +134,7 @@ def authorization_prefix(settings: AppSettings) -> str:
 
 
 @pytest_asyncio.fixture
-async def tokens(settings: AppSettings, session, test_user: User) -> (str, str):
+async def tokens(settings: AppSettings, session: AsyncSession, test_user: User) -> (str, str):
     from app.services.token import create_tokens_for_user
 
     token_access, token_refresh = create_tokens_for_user(
@@ -140,15 +154,3 @@ def authorized_client(client: AsyncClient, authorization_prefix: str, tokens: (s
     token_access, _ = tokens
     client.headers = {"Authorization": f"{authorization_prefix} {token_access}", **client.headers}
     return client
-
-
-@pytest_asyncio.fixture
-async def test_profile(session, test_user: User) -> Profile:
-    profile_repository = ProfileRepository(session)
-    return await profile_repository.update_profile(
-        test_user.id,
-        first_name="Test",
-        last_name="User",
-        age=18,
-        gender=Gender.male,
-    )

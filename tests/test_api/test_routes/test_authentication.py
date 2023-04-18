@@ -23,7 +23,7 @@ from app.services.token import create_tokens_for_user
 async def test_unable_to_login_with_wrong_jwt_prefix(app, client, tokens):
     token_access, _ = tokens
     response = await client.get(
-        app.url_path_for("users:get-user"),
+        app.url_path_for("users:get-current-user"),
         headers={"Authorization": f"WrongPrefix {token_access}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -37,7 +37,7 @@ async def test_unable_to_login_when_user_does_not_exist_any_more(settings, initi
         secret_key=settings.private_key,
     )
     response = await client.get(
-        initialized_app.url_path_for("users:get-user"),
+        initialized_app.url_path_for("users:get-current-user"),
         headers={"Authorization": f"{authorization_prefix} {token_access}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

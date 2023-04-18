@@ -32,7 +32,7 @@ def wrong_authorization_header(request) -> str:
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "api_method, route_name",
-    (("GET", "users:get-user"), ("PATCH", "users:update-user")),
+    (("GET", "users:get-current-user"), ("PATCH", "users:update-current-user")),
 )
 async def test_user_can_not_access_own_profile_if_not_logged_in(
         initialized_app: FastAPI,
@@ -48,7 +48,7 @@ async def test_user_can_not_access_own_profile_if_not_logged_in(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "api_method, route_name",
-    (("GET", "users:get-user"), ("PATCH", "users:update-user")),
+    (("GET", "users:get-current-user"), ("PATCH", "users:update-current-user")),
 )
 async def test_user_can_not_retrieve_own_profile_if_wrong_token(
         initialized_app: FastAPI,
@@ -72,13 +72,15 @@ async def test_user_can_retrieve_own_profile(
         authorized_client: AsyncClient,
         test_user: User,
 ) -> None:
-    response = await authorized_client.get(initialized_app.url_path_for("users:get-user"))
+    response = await authorized_client.get(initialized_app.url_path_for("users:get-current-user"))
     assert response.status_code == status.HTTP_200_OK
 
     result = WrapperResponse(**response.json())
     assert result.success
 
     user_profile = UserResponse(**result.payload)
+    assert user_profile.user.id == test_user.id
+    assert user_profile.user.phone == test_user.phone
     assert user_profile.user.username == test_user.username
 
 
@@ -91,7 +93,7 @@ async def test_user_can_update_username_on_own_profile(
     username = "new_username"
 
     response = await authorized_client.patch(
-        initialized_app.url_path_for("users:update-user"),
+        initialized_app.url_path_for("users:update-current-user"),
         json={
             "username": username,
         },
@@ -118,7 +120,7 @@ async def test_user_can_update_phone_on_own_profile(
     verification_code, phone_token = await phone_repository.create_verification_code_by_phone(new_phone)
 
     response = await authorized_client.post(
-        initialized_app.url_path_for("users:change-phone"),
+        initialized_app.url_path_for("users:change-phone-for-current-user"),
         json={
             "phone": new_phone,
             "verification_code": verification_code,
@@ -144,7 +146,7 @@ async def test_user_can_change_password(
     password = "new_password"
 
     response = await authorized_client.patch(
-        initialized_app.url_path_for("users:update-user"),
+        initialized_app.url_path_for("users:update-current-user"),
         json={
             "password": password,
         },
@@ -173,7 +175,7 @@ async def test_user_can_not_take_already_used_username(
     username = "other_username"
 
     response = await authorized_client.patch(
-        initialized_app.url_path_for("users:update-user"),
+        initialized_app.url_path_for("users:update-current-user"),
         json={
             "username": username,
         },
@@ -195,7 +197,7 @@ async def test_user_can_not_take_already_used_phone(
     verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
 
     response = await authorized_client.post(
-        initialized_app.url_path_for("users:change-phone"),
+        initialized_app.url_path_for("users:change-phone-for-current-user"),
         json={
             "phone": phone,
             "verification_code": verification_code,

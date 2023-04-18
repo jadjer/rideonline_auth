@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
-from app.models.schemas.phone import Phone
+from app.models.schemas.phone import PhoneGet
 from app.models.schemas.user import Username
 from app.models.schemas.wrapper import WrapperResponse
 from app.api.dependencies.database import get_repository
@@ -38,7 +38,7 @@ async def exist_username(
 
 @router.post("/phone", status_code=status.HTTP_200_OK, name="exists:phone")
 async def exist_phone(
-        request: Phone,
+        request: PhoneGet,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
 ) -> WrapperResponse:
     if not await phone_repository.is_attached_by_phone(request.phone):

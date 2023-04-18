@@ -12,13 +12,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from enum import Enum
+from typing import Optional
+from pydantic import HttpUrl
+
 from app.models.common import IDModelMixin
 from app.services import security
+
+
+class Gender(Enum):
+    undefined = "undefined"
+    male = "male"
+    female = "female"
 
 
 class User(IDModelMixin):
     phone: str
     username: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Gender = Gender.undefined
+    age: Optional[int] = None
+    country: Optional[str] = None
+    region: Optional[str] = None
+    image: Optional[HttpUrl] = None
     is_blocked: bool = False
 
 
