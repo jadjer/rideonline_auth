@@ -11,6 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 from neo4j import AsyncResult, Record
 
 from app.database.repositories.base_repository import BaseRepository

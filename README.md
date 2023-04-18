@@ -1,2 +1,2 @@
-# Ride2Online_Auth
+# rideonline_auth
 Auth server

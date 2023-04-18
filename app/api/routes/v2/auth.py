@@ -17,21 +17,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
+from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
-from app.models.schemas.phone import (
-    Phone,
-    PhoneToken,
-)
-from app.models.schemas.user import (
-    UserCreate,
-    UserLogin,
-    UserWithTokenResponse,
-    Token,
-    UserChangePassword,
-)
+from app.models.schemas.phone import PhoneGet, PhoneToken
+from app.models.schemas.user import UserCreate, UserLogin, UserWithTokenResponse, Token
 from app.models.schemas.wrapper import WrapperResponse
-from app.services.token import create_tokens_for_user
+from app.services.token import create_tokens_for_user, get_user_id_from_refresh_token
 from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
 from app.api.dependencies.database import get_repository
@@ -42,7 +34,7 @@ router = APIRouter()
 
 @router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
-        request: Phone,
+        request: PhoneGet,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
@@ -66,6 +58,7 @@ async def register(
         request: UserCreate,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
+        token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
     if not await phone_repository.verify_phone_by_code_and_token(
@@ -79,20 +72,21 @@ async def register(
     if await user_repository.is_exists(request.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
-    user = await user_repository.create_user_by_phone(**request.__dict__)
+    user = await user_repository.create_user(**request.__dict__)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     token_access, token_refresh = create_tokens_for_user(
         user_id=user.id,
         username=user.username,
-        phone=user.phone,
-        secret_key=settings.secret_key.get_secret_value()
+        secret_key=settings.private_key
     )
+
+    await token_repository.update_token(user.id, token_refresh)
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            user=User(**user.__dict__),
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )
@@ -102,6 +96,7 @@ async def register(
 async def login(
         request: UserLogin,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
+        token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
     user = await user_repository.get_user_by_username(request.username)
@@ -114,51 +109,54 @@ async def login(
     token_access, token_refresh = create_tokens_for_user(
         user_id=user.id,
         username=user.username,
-        phone=user.phone,
-        secret_key=settings.secret_key.get_secret_value()
+        secret_key=settings.private_key
     )
+
+    await token_repository.update_token(user.id, token_refresh)
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            user=User(**user.__dict__),
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )
 
 
-@router.post("/change_password", status_code=status.HTTP_200_OK, name="auth:change-password")
-async def change_password(
-        request: UserChangePassword,
+@router.post("/refresh_token", status_code=status.HTTP_200_OK, name="auth:refresh-token")
+async def refresh_token(
+        request: Token,
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
-        phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
+        token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    if not await phone_repository.verify_phone_by_code_and_token(
-            request.phone, request.verification_code, request.phone_token,
-    ):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+    user_id = get_user_id_from_refresh_token(
+        access_token=request.token_access,
+        refresh_token=request.token_refresh,
+        secret_key=settings.public_key
+    )
 
-    if not await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PHONE_NUMBER_DOES_NOT_EXIST)
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.WRONG_TOKEN_PAIR)
 
-    user = await user_repository.get_user_by_phone(request.phone)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+    user_token = await token_repository.get_token(user_id)
+    if request.token_refresh != user_token:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.REFRESH_TOKEN_IS_REVOKED)
 
-    user = await user_repository.update_user_by_user_id(user.id, password=request.password)
+    user = await user_repository.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     token_access, token_refresh = create_tokens_for_user(
         user_id=user.id,
         username=user.username,
-        phone=user.phone,
-        secret_key=settings.secret_key.get_secret_value()
+        secret_key=settings.private_key
     )
+
+    await token_repository.update_token(user.id, token_refresh)
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked),
+            user=User(**user.__dict__),
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )

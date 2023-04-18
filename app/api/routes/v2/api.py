@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,22 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from enum import Enum
-from typing import Optional
-from pydantic import BaseModel, HttpUrl
+from fastapi import APIRouter
 
+from app.api.routes.v2 import auth, user, exist
 
-class Gender(Enum):
-    undefined = "undefined"
-    male = "male"
-    female = "female"
+router = APIRouter(prefix="/v2")
 
-
-class Profile(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    gender: Gender = Gender.undefined
-    age: Optional[int] = None
-    country: Optional[str] = None
-    region: Optional[str] = None
-    image: Optional[HttpUrl] = None
+router.include_router(auth.router, tags=["Auth"])
+router.include_router(user.router, tags=["Users"], prefix="/users")
+router.include_router(exist.router, tags=["Exists"], prefix="/exists")

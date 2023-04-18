@@ -15,7 +15,7 @@
 from pydantic import BaseModel
 
 
-class Phone(BaseModel):
+class PhoneGet(BaseModel):
     phone: str
 
 

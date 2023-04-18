@@ -31,7 +31,7 @@ async def test_user_can_get_new_tokens(
     password = "password"
 
     response = await client.post(
-        initialized_app.url_path_for("tokens:get-token"),
+        initialized_app.url_path_for("auth:login"),
         json={
             "username": username,
             "password": password,
@@ -49,7 +49,7 @@ async def test_user_can_not_get_new_tokens_for_wrong_credentials(
     password = "password"
 
     response = await client.post(
-        initialized_app.url_path_for("tokens:get-token"),
+        initialized_app.url_path_for("auth:login"),
         json={
             "username": username,
             "password": password,
@@ -67,7 +67,7 @@ async def test_user_refresh_token(
     token_access, token_refresh = tokens
 
     response = await client.post(
-        initialized_app.url_path_for("tokens:refresh-token"),
+        initialized_app.url_path_for("auth:refresh-token"),
         json={
             "token_access": token_access,
             "token_refresh": token_refresh,

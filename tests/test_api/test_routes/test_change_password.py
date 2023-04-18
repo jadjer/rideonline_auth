@@ -22,47 +22,25 @@ from app.models.domain.user import User
 
 
 @pytest.mark.asyncio
-async def test_user_success_change_password(
-        initialized_app: FastAPI,
-        client: AsyncClient,
-        test_user: User,
-        session,
-) -> None:
-    phone = "+375257654321"
-
-    phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
-
+async def test_user_success_change_password(initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User):
     change_password_json = {
-        "phone": phone,
         "password": "password",
-        "verification_code": verification_code,
-        "phone_token": phone_token,
     }
 
-    response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
+    response = await authorized_client.patch(
+        initialized_app.url_path_for("users:update-current-user"),
+        json=change_password_json
+    )
 
     assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.asyncio
-async def test_unregistered_user_can_not_change_password(
-        initialized_app: FastAPI,
-        client: AsyncClient,
-        session,
-) -> None:
-    phone = "+375257654321"
-
-    phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
-
+async def test_unregistered_user_can_not_change_password(initialized_app: FastAPI, client: AsyncClient):
     change_password_json = {
-        "phone": phone,
         "password": "password",
-        "verification_code": verification_code,
-        "phone_token": phone_token,
     }
 
-    response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
+    response = await client.patch(initialized_app.url_path_for("users:update-current-user"), json=change_password_json)
 
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

@@ -18,6 +18,12 @@ from app.core.settings.app import AppSettings
 
 @lru_cache
 def get_app_settings() -> AppSettings:
-    config = AppSettings
+    config = AppSettings()
 
-    return config()
+    with open(config.public_key_path) as f:
+        config.public_key = f.read()
+
+    with open(config.private_key_path) as f:
+        config.private_key = f.read()
+
+    return config

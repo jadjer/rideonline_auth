@@ -12,11 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 from app.models.domain.token import Token
-from app.models.domain.user import User
+from app.models.domain.user import User, Gender
 
 
 class Username(BaseModel):
@@ -34,13 +33,13 @@ class UserCreate(BaseModel):
     password: str
     verification_code: int
     phone_token: str
-
-
-class UserChangePassword(BaseModel):
-    phone: str
-    password: str
-    verification_code: int
-    phone_token: str
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: Gender = Gender.undefined
+    age: int | None = None
+    country: str | None = None
+    region: str | None = None
+    image: HttpUrl | None = None
 
 
 class UserChangePhone(BaseModel):
@@ -50,8 +49,15 @@ class UserChangePhone(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    password: Optional[str] = None
+    username: str | None = None
+    password: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: Gender = Gender.undefined
+    age: int | None = None
+    country: str | None = None
+    region: str | None = None
+    image: HttpUrl | None = None
 
 
 class UserResponse(BaseModel):

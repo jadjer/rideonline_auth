@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
+from app.api.dependencies.get_from_path import get_user_id_from_path
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User, UserInDB
@@ -26,8 +27,8 @@ from app.resources import strings
 router = APIRouter()
 
 
-@router.get("", status_code=status.HTTP_200_OK, name="users:get-user")
-async def get_user(
+@router.get("", status_code=status.HTTP_200_OK, name="users:get-current-user")
+async def get_current_user(
         user: User = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
@@ -37,13 +38,13 @@ async def get_user(
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+            user=User(**user.__dict__),
         )
     )
 
 
-@router.patch("", status_code=status.HTTP_200_OK, name="users:update-user")
-async def update_user(
+@router.patch("", status_code=status.HTTP_200_OK, name="users:update-current-user")
+async def update_current_user(
         request: UserUpdate,
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
@@ -58,13 +59,13 @@ async def update_user(
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+            user=User(**user.__dict__),
         )
     )
 
 
-@router.post("/change_phone", status_code=status.HTTP_200_OK, name="users:change-phone")
-async def change_phone(
+@router.post("/change_phone", status_code=status.HTTP_200_OK, name="users:change-phone-for-current-user")
+async def change_phone_for_current_user(
         request: UserChangePhone,
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
@@ -76,21 +77,33 @@ async def change_phone(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
     if request.phone == user.phone:
-        return WrapperResponse(
-            payload=UserResponse(
-                user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
-            )
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
 
     if await phone_repository.is_attached_by_phone(request.phone):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
 
-    user: User = await user_repository.change_user_phone_by_user_id(user.id, **request.__dict__)
+    user: User = await user_repository.change_user_phone_by_user_id(user.id, phone=request.phone)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(id=user.id, phone=user.phone, username=user.username, is_blocked=user.is_blocked)
+            user=User(**user.__dict__),
+        )
+    )
+
+
+@router.get("/{user_id}", status_code=status.HTTP_200_OK, name="users:get-user-by-id")
+async def get_user_by_id(
+        user_id: int = Depends(get_user_id_from_path),
+        user_repository: UserRepository = Depends(get_repository(UserRepository)),
+) -> WrapperResponse:
+    user = await user_repository.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+
+    return WrapperResponse(
+        payload=UserResponse(
+            user=User(**user.__dict__),
         )
     )
