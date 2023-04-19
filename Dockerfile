@@ -20,9 +20,9 @@ RUN pip install --upgrade pip
 RUN mkdir -p $KEY_PATH
 WORKDIR $BASE_PATH
 COPY generate_keys.sh $BASE_PATH
+VOLUME $KEY_PATH
 RUN chmod +x $BASE_PATH/generate_keys.sh
 RUN sh $BASE_PATH/generate_keys.sh $KEY_PATH
-VOLUME $KEY_PATH
 
 RUN mkdir -p $APP_PATH
 WORKDIR $BASE_PATH
