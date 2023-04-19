@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 
 KEY_DIR=$1
+
+if [ ! -d "$KEY_DIR" ]; then
+  mkdir -p "$KEY_DIR";
+fi
+
 PUBLIC_KEY="$KEY_DIR/public_key.pem"
 PRIVATE_KEY="$KEY_DIR/private_key.pem"
 
