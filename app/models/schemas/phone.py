@@ -15,9 +15,9 @@
 from pydantic import BaseModel
 
 
-class PhoneGet(BaseModel):
+class Phone(BaseModel):
     phone: str
 
 
-class PhoneToken(BaseModel):
+class PhoneTokenResponse(BaseModel):
     phone_token: str
