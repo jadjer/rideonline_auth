@@ -22,6 +22,46 @@ from app.models.domain.user import User
 
 
 @pytest.mark.asyncio
+async def test_user_success_change_password_without_auth(initialized_app, client, test_user, session):
+    phone = "+375257654321"
+    password = "password"
+
+    phone_repository = PhoneRepository(session)
+    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+
+    change_password_json = {
+        "phone": phone,
+        "password": password,
+        "verification_code": verification_code,
+        "phone_token": phone_token,
+    }
+
+    response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
+
+    assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.asyncio
+async def test_unregistered_user_can_not_change_password_without_auth(initialized_app, client, session):
+    phone = "+375257654321"
+    password = "password"
+
+    phone_repository = PhoneRepository(session)
+    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+
+    change_password_json = {
+        "phone": phone,
+        "password": password,
+        "verification_code": verification_code,
+        "phone_token": phone_token,
+    }
+
+    response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
 async def test_user_success_change_password(initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User):
     change_password_json = {
         "password": "password",
