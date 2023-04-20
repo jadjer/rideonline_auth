@@ -20,7 +20,7 @@ from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
-from app.models.schemas.phone import PhoneGet, PhoneToken
+from app.models.schemas.phone import Phone, PhoneTokenResponse
 from app.models.schemas.user import UserCreate, UserLogin, UserWithTokenResponse, Token, UserChangePassword
 from app.models.schemas.wrapper import WrapperResponse
 from app.services.token import create_tokens_for_user, get_user_id_from_refresh_token
@@ -34,7 +34,7 @@ router = APIRouter()
 
 @router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
-        request: PhoneGet,
+        request: Phone,
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
@@ -47,7 +47,7 @@ async def get_verification_code(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
 
     return WrapperResponse(
-        payload=PhoneToken(
+        payload=PhoneTokenResponse(
             phone_token=phone_token
         )
     )
