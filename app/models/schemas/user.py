@@ -48,6 +48,13 @@ class UserChangePhone(BaseModel):
     phone_token: str
 
 
+class UserChangePassword(BaseModel):
+    phone: str
+    password: str
+    verification_code: int
+    phone_token: str
+
+
 class UserUpdate(BaseModel):
     username: str | None = None
     password: str | None = None
