@@ -1,10 +1,10 @@
-# rideonline_auth
-Auth server
+# RideOnline Auth
+Auth server for rideonline's project
 
 Deploy
 ---
 ```shell
-docker pull jadjer/ride2online_auth
+docker pull ghcr.io/jadjer/rideonline_auth:latest
 ```
 
 Run
