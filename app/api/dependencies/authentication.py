@@ -66,7 +66,7 @@ async def _get_current_user(
 ) -> UserInDB:
     user = await user_repository.get_user_by_id(user_id)
     if not user:
-        logger.error(f"User with ID {user_id} doesn't found")
+        logger.error(f"User (id: {user_id}) doesn't exist")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return user
