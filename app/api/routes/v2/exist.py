@@ -13,13 +13,15 @@
 #  limitations under the License.
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 
+from app.api.dependencies.database import get_repository
+from app.api.dependencies.get_from_path import get_language_from_path
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.schemas.phone import Phone
 from app.models.schemas.user import Username
 from app.models.schemas.wrapper import WrapperResponse
-from app.api.dependencies.database import get_repository
 from app.resources import strings
 
 router = APIRouter()
@@ -28,20 +30,36 @@ router = APIRouter()
 @router.post("/username", status_code=status.HTTP_200_OK, name="exists:username")
 async def exist_username(
         request: Username,
+        language: str = Depends(get_language_from_path),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
-) -> WrapperResponse:
+) -> JSONResponse:
     if not await user_repository.is_exists(request.username):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USERNAME_DOES_NOT_EXIST)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=strings.USERNAME_DOES_NOT_EXIST,
+            headers={"Content-Language": language},
+        )
 
-    return WrapperResponse()
+    return JSONResponse(
+        content=WrapperResponse(),
+        headers={"Content-Language": language},
+    )
 
 
 @router.post("/phone", status_code=status.HTTP_200_OK, name="exists:phone")
 async def exist_phone(
         request: Phone,
+        language: str = Depends(get_language_from_path),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
-) -> WrapperResponse:
+) -> JSONResponse:
     if not await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PHONE_NUMBER_DOES_NOT_EXIST)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=strings.PHONE_NUMBER_DOES_NOT_EXIST,
+            headers={"Content-Language": language},
+        )
 
-    return WrapperResponse()
+    return JSONResponse(
+        content=WrapperResponse(),
+        headers={"Content-Language": language},
+    )
