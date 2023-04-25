@@ -14,6 +14,7 @@
 
 import logging
 import sys
+
 from typing import Any, Dict, List, Tuple
 from loguru import logger
 from pydantic import FilePath, HttpUrl, IPvAnyAddress
@@ -29,7 +30,7 @@ class AppSettings(BaseAppSettings):
     openapi_url: str = "/openapi.json"
     redoc_url: str = "/redoc"
     title: str = "Ride Online Auth"
-    version: str = "0.0.0"
+    version: str = "v0.0.0"
 
     database_host: IPvAnyAddress
     database_port: int = 7687
@@ -44,7 +45,7 @@ class AppSettings(BaseAppSettings):
     private_key_path: FilePath
     private_key: str = ""
 
-    api_prefix: str = ""
+    api_prefix: str = "/api"
 
     jwt_token_prefix: str = "Bearer"
 
