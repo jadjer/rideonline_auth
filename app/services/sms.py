@@ -16,9 +16,9 @@ from httpx import AsyncClient
 from pydantic import HttpUrl
 
 
-async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, code: str) -> bool:
+async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, code: str, language: str) -> bool:
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     request = {
         "phone": phone,

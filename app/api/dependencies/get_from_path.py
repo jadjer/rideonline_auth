@@ -12,12 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import Path, Query, Header
+from fastapi import Path, Query
 
 
 def get_user_id_from_path(user_id: int = Path(..., ge=1)) -> int:
     return user_id
 
 
-def get_language_from_path(language: str = Header(default="en", alias="Accept-Language")) -> str:
+def get_language_from_path(language: str = Query(default="en")) -> str:
     return language

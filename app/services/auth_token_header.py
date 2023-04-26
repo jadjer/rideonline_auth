@@ -12,14 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
-
+from fastapi import status, Depends
 from fastapi.openapi.models import APIKey, APIKeyIn
 from fastapi.security.api_key import APIKeyBase
 from fastapi.exceptions import HTTPException
-from fastapi import status
 from fastapi.requests import Request
 
+from app.api.dependencies.get_from_path import get_language_from_path
 from app.resources import strings
 
 
@@ -27,8 +26,8 @@ class AuthTokenHeader(APIKeyBase):
     def __init__(
             self,
             name: str,
-            scheme_name: Optional[str] = None,
-            description: Optional[str] = None,
+            scheme_name: str | None = None,
+            description: str | None = None,
             auto_error: bool = True
     ):
         self.model: APIKey = APIKey(
@@ -37,7 +36,7 @@ class AuthTokenHeader(APIKeyBase):
         self.scheme_name = scheme_name or self.__class__.__name__
         self.auto_error = auto_error
 
-    async def __call__(self, request: Request) -> Optional[str]:
+    async def __call__(self, request: Request, language: str = Depends(get_language_from_path)) -> str | None:
         api_key: str = request.headers.get(self.model.name)
         if not api_key:
             if self.auto_error:

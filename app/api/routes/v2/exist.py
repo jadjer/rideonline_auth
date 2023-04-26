@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.get_from_path import get_language_from_path
@@ -32,18 +31,11 @@ async def exist_username(
         request: Username,
         language: str = Depends(get_language_from_path),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
-) -> JSONResponse:
+) -> WrapperResponse:
     if not await user_repository.is_exists(request.username):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=strings.USERNAME_DOES_NOT_EXIST,
-            headers={"Content-Language": language},
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USERNAME_DOES_NOT_EXIST)
 
-    return JSONResponse(
-        content=WrapperResponse(),
-        headers={"Content-Language": language},
-    )
+    return WrapperResponse()
 
 
 @router.post("/phone", status_code=status.HTTP_200_OK, name="exists:phone")
@@ -51,15 +43,8 @@ async def exist_phone(
         request: Phone,
         language: str = Depends(get_language_from_path),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
-) -> JSONResponse:
+) -> WrapperResponse:
     if not await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=strings.PHONE_NUMBER_DOES_NOT_EXIST,
-            headers={"Content-Language": language},
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PHONE_NUMBER_DOES_NOT_EXIST)
 
-    return JSONResponse(
-        content=WrapperResponse(),
-        headers={"Content-Language": language},
-    )
+    return WrapperResponse()
