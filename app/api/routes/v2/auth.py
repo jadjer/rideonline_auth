@@ -15,7 +15,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.get_from_path import get_language_from_path
+from app.api.dependencies.get_from_header import get_language
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
@@ -28,7 +28,7 @@ from app.models.schemas.wrapper import WrapperResponse
 from app.services.token import create_tokens_for_user, get_user_id_from_refresh_token
 from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
-from app.resources import strings
+from app.resources import strings_factory
 
 router = APIRouter()
 
@@ -36,16 +36,18 @@ router = APIRouter()
 @router.post("/get_verification_code", status_code=status.HTTP_200_OK, name="auth:verification")
 async def get_verification_code(
         request: Phone,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
 
     verification_code, phone_token = await phone_repository.create_verification_code_by_phone(request.phone)
 
-    if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_code):
+    if not await send_verify_code_to_phone(settings.sms_service, request.phone, language, verification_code):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
 
     return WrapperResponse(
@@ -56,12 +58,14 @@ async def get_verification_code(
 @router.post("/register", status_code=status.HTTP_201_CREATED, name="auth:register")
 async def register(
         request: UserCreate,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     if not await phone_repository.verify_phone_by_code_and_token(request.phone,
                                                                  request.verification_code,
                                                                  request.phone_token):
@@ -96,11 +100,13 @@ async def register(
 @router.post("/login", status_code=status.HTTP_200_OK, name="auth:login")
 async def login(
         request: UserLogin,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     user = await user_repository.get_user_by_username(request.username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
@@ -127,11 +133,13 @@ async def login(
 @router.post("/change_password", status_code=status.HTTP_200_OK, name="auth:change-password")
 async def change_password(
         request: UserChangePassword,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     if not await phone_repository.verify_phone_by_code_and_token(request.phone,
                                                                  request.verification_code,
                                                                  request.phone_token):
@@ -165,11 +173,13 @@ async def change_password(
 @router.post("/refresh_token", status_code=status.HTTP_200_OK, name="auth:refresh-token")
 async def refresh_token(
         request: Token,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     user_id = get_user_id_from_refresh_token(
         access_token=request.token_access,
         refresh_token=request.token_refresh,

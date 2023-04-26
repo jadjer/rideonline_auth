@@ -12,11 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from fastapi import Path
+from .strings_en import StringsEN
+from .strings_ru import StringsRU
 
 
-def get_user_id(user_id: int = Path(..., ge=1)) -> int:
-    return user_id
+def getLanguage(language: str) -> StringsEN:
+    if language == "ru":
+        return StringsRU()
 
-
-
+    return StringsEN()
