@@ -23,7 +23,7 @@ from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
-from app.resources import strings_en
+from app.resources import strings_en, strings_factory
 from app.services.auth_token_header import AuthTokenHeader
 from app.services.token import get_user_id_from_access_token
 
@@ -39,6 +39,8 @@ def _get_authorization_header(
         api_key: str = Security(AuthTokenHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> str:
+    strings = strings_factory.getLanguage(language)
+
     try:
         token_prefix, token = api_key.split(" ")
     except ValueError as exception:
@@ -56,6 +58,8 @@ async def _get_user_id_from_token(
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
 ) -> int:
+    strings = strings_factory.getLanguage(language)
+
     user_id = get_user_id_from_access_token(token, settings.public_key)
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
@@ -68,6 +72,8 @@ async def _get_current_user(
         user_id: int = Depends(_get_user_id_from_token),
         user_repository: UserRepository = Depends(get_repository(UserRepository))
 ) -> UserInDB:
+    strings = strings_factory.getLanguage(language)
+
     user = await user_repository.get_user_by_id(user_id)
     if not user:
         logger.error(f"User (id: {user_id}) doesn't exist")
