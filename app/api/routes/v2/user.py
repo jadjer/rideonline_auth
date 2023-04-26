@@ -16,23 +16,26 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.get_from_path import get_user_id_from_path, get_language_from_path
+from app.api.dependencies.get_from_path import get_user_id
+from app.api.dependencies.get_from_header import get_language
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User, UserInDB
 from app.models.schemas.user import UserResponse, UserUpdate, UserChangePhone
 from app.models.schemas.wrapper import WrapperResponse
-from app.resources import strings
+from app.resources import strings_en, strings_factory
 
 router = APIRouter()
 
 
 @router.get("", status_code=status.HTTP_200_OK, name="users:get-current-user")
 async def get_current_user(
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user: User = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     user: User = await user_repository.get_user_by_username(user.username)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
@@ -47,10 +50,12 @@ async def get_current_user(
 @router.patch("", status_code=status.HTTP_200_OK, name="users:update-current-user")
 async def update_current_user(
         request: UserUpdate,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     if request.username and request.username != user.username:
         if await user_repository.is_exists(request.username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
@@ -69,11 +74,13 @@ async def update_current_user(
 @router.post("/change_phone", status_code=status.HTTP_200_OK, name="users:change-phone-for-current-user")
 async def change_phone_for_current_user(
         request: UserChangePhone,
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     if not await phone_repository.verify_phone_by_code_and_token(request.phone,
                                                                  request.verification_code,
                                                                  request.phone_token):
@@ -98,10 +105,12 @@ async def change_phone_for_current_user(
 
 @router.get("/{user_id}", status_code=status.HTTP_200_OK, name="users:get-user-by-id")
 async def get_user_by_id(
-        user_id: int = Depends(get_user_id_from_path),
-        language: str = Depends(get_language_from_path),
+        user_id: int = Depends(get_user_id),
+        language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
+    strings = strings_factory.getLanguage(language)
+
     user = await user_repository.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)

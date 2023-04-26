@@ -18,12 +18,12 @@ from typing import Callable
 from fastapi import Depends, HTTPException, Security, status
 
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.get_from_path import get_language_from_path
+from app.api.dependencies.get_from_header import get_language
 from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
-from app.resources import strings
+from app.resources import strings_en
 from app.services.auth_token_header import AuthTokenHeader
 from app.services.token import get_user_id_from_access_token
 
@@ -35,7 +35,7 @@ def get_current_user_authorizer() -> Callable:
 
 
 def _get_authorization_header(
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         api_key: str = Security(AuthTokenHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> str:
@@ -52,7 +52,7 @@ def _get_authorization_header(
 
 
 async def _get_user_id_from_token(
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
 ) -> int:
@@ -64,7 +64,7 @@ async def _get_user_id_from_token(
 
 
 async def _get_current_user(
-        language: str = Depends(get_language_from_path),
+        language: str = Depends(get_language),
         user_id: int = Depends(_get_user_id_from_token),
         user_repository: UserRepository = Depends(get_repository(UserRepository))
 ) -> UserInDB:

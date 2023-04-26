@@ -15,14 +15,19 @@
 from httpx import AsyncClient
 from pydantic import HttpUrl
 
+from app.resources import strings_factory
 
-async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, code: str, language: str) -> bool:
+
+async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, language: str, code: str) -> bool:
+    strings = strings_factory.getLanguage(language)
+    verification_message = strings.VERIFICATION_CODE
+
     headers = {
         "Content-Type": "application/json",
     }
     request = {
         "phone": phone,
-        "message": f"Your verification code is {code}",
+        "message": verification_message.format(code=code),
     }
 
     async with AsyncClient(base_url=sms_service, headers=headers) as client:
