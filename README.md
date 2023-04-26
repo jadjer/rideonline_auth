@@ -1,16 +1,37 @@
-# RideOnline Auth
+# Ride Online Auth
 Auth server for rideonline's project
 
 Deploy
 ---
+
+Pull the image latest version
 ```shell
 docker pull ghcr.io/jadjer/rideonline_auth:latest
 ```
 
+Keys
+---
+
+Get the generator script
+```shell
+wget https://raw.githubusercontent.com/jadjer/rideonline_auth/main/generate_keys.sh
+```
+
+Make script as executable
+```shell
+chmod +x ./generate_keys.sh
+```
+
+Generate keys pair
+```shell
+./generate_keys.sh ./keys
+```
+
 Run
 ---
+
 ```shell
-docker run -d --restart always --name auth -e DATABASE_HOST= -e DATABASE_USER= -e DATABASE_PASS= -e SMS_SERVICE= -p 8000:8000 ghcr.io/jadjer/rideonline_auth:latest
+docker run -d --restart always --name auth -e DATABASE_HOST= -e DATABASE_USER= -e DATABASE_PASS= -e SMS_SERVICE= -v $PWD/keys:/app/keys -p 8000:8000 ghcr.io/jadjer/rideonline_auth:latest
 ```
 `DATABASE_HOST - host ip for neo4j database`
 
@@ -19,11 +40,3 @@ docker run -d --restart always --name auth -e DATABASE_HOST= -e DATABASE_USER= -
 `DATABASE_PASS - user's password in neo4j database`
 
 `SMS_SERVICE - http link for sms service (for send verification codes)`
-
-Key
----
-```shell
-docker cp auth:/app/keys/public_key.pem public_key.pem
-```
-
-`public_key.pem used for verification JWT tokens`
