@@ -26,9 +26,7 @@ RUN mkdir -p $BASE_PATH
 WORKDIR $BASE_PATH
 
 RUN mkdir -p $KEY_PATH
-COPY generate_keys.sh $BASE_PATH
-RUN chmod +x $BASE_PATH/generate_keys.sh
-RUN sh $BASE_PATH/generate_keys.sh $KEY_PATH
+VOLUME $KEY_PATH
 
 RUN mkdir -p $APP_PATH
 COPY requirements.txt $BASE_PATH
