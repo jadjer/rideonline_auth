@@ -23,7 +23,7 @@ from app.core.config import get_app_settings
 from app.core.settings.app import AppSettings
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import UserInDB
-from app.resources import strings_en, strings_factory
+from app.resources import strings_factory
 from app.services.auth_token_header import AuthTokenHeader
 from app.services.token import get_user_id_from_access_token
 
