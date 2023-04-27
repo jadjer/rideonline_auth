@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,7 @@ from httpx import AsyncClient
 @pytest.mark.asyncio
 async def test_frw_validation_error_format(app: FastAPI):
     @app.get("/wrong_path/{param}")
-    def route_for_test(param: int) -> None:  # pragma: no cover
+    def route_for_test(param: int) -> None:
         pass
 
     async with AsyncClient(base_url="http://localhost:12345", app=app) as client:
