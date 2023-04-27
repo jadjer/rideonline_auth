@@ -21,7 +21,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.models.schemas.phone import Phone
 from app.models.schemas.user import Username
 from app.models.schemas.wrapper import WrapperResponse
-from app.resources import strings_en, strings_factory
+from app.resources import strings_factory
 
 router = APIRouter()
 

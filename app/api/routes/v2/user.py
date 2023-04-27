@@ -4,7 +4,7 @@
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User, UserInDB
 from app.models.schemas.user import UserResponse, UserUpdate, UserChangePhone
 from app.models.schemas.wrapper import WrapperResponse
-from app.resources import strings_en, strings_factory
+from app.resources import strings_factory
 
 router = APIRouter()
 

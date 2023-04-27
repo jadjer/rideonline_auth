@@ -40,3 +40,8 @@ docker run -d --restart always --name auth -e DATABASE_HOST= -e DATABASE_USER= -
 `DATABASE_PASS - user's password in neo4j database`
 
 `SMS_SERVICE - http link for sms service (for send verification codes)`
+
+Use It
+---
+
+
