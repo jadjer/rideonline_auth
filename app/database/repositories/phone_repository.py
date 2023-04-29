@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from typing import Optional
 from loguru import logger
 from pyotp import TOTP, random_base32
 from neo4j import AsyncResult, Record
@@ -45,7 +44,7 @@ class PhoneRepository(BaseRepository):
         """
 
         result: AsyncResult = await self.session.run(query)
-        record: Optional[Record] = await result.single()
+        record: Record | None = await result.single()
 
         if not record:
             logger.warning("Query result is empty")
@@ -68,7 +67,7 @@ class PhoneRepository(BaseRepository):
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)
-        record: Optional[Record] = await result.single()
+        record: Record | None = await result.single()
 
         if record:
             return True
