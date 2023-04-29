@@ -1,5 +1,5 @@
 # Ride Online Auth
-Auth server for rideonline's project
+Auth server for ride online's project
 
 Deploy
 ---
@@ -44,4 +44,6 @@ docker run -d --restart always --name auth -e DATABASE_HOST= -e DATABASE_USER= -
 Use It
 ---
 
-
+```http request
+http://localhost:8000/docs
+```
