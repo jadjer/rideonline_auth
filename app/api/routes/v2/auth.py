@@ -47,7 +47,10 @@ async def get_verification_code(
 
     verification_code, phone_token = await phone_repository.create_verification_code_by_phone(request.phone)
 
-    if not await send_verify_code_to_phone(settings.sms_service, request.phone, language, verification_code):
+    verification_message = strings.VERIFICATION_CODE
+    verification_message.format(code=verification_code)
+
+    if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_message):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
 
     return WrapperResponse(
