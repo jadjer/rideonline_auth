@@ -38,7 +38,7 @@ class UserRepository(BaseRepository):
             image: HttpUrl = "",
             **kwargs
     ) -> UserInDB | None:
-        user = UserInDB(username=username, phone=phone)
+        user = UserInDB(phone=phone, username=username)
         user.change_password(password)
 
         user.first_name = first_name
@@ -50,7 +50,8 @@ class UserRepository(BaseRepository):
         user.image = image
 
         query = """
-            MATCH (user:User {phone_number: $phone})
+            MATCH (phone:Phone {number: $phone})
+            CREATE (phone)-[:Attached]->(user:User)
             SET
                 user.username = $username,
                 user.salt = $salt,
@@ -66,7 +67,7 @@ class UserRepository(BaseRepository):
             RETURN id(user) AS user_id
         """
 
-        result: AsyncResult = await self.session.run(query, user.__dict__, phone=phone)
+        result: AsyncResult = await self.session.run(query, **user.__dict__)
 
         try:
             record: Record | None = await result.single()
@@ -84,9 +85,9 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_id(self, user_id: int) -> UserInDB | None:
         query = """
-            MATCH (user:User)
+            MATCH (phone:Phone)-[:Attached]->(user:User)
             WHERE id(user) = $user_id
-            RETURN id(user) AS user_id, user
+            RETURN id(user) AS user_id, user, phone
         """
 
         result: AsyncResult = await self.session.run(query, user_id=user_id)
@@ -97,8 +98,8 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_username(self, username: str) -> UserInDB | None:
         query = """
-            MATCH (user:User {username: $username})
-            RETURN id(user) AS user_id, user
+            MATCH (phone:Phone)-[:Attached]->(user:User {username: $username})
+            RETURN id(user) AS user_id, user, phone
         """
 
         result: AsyncResult = await self.session.run(query, username=username)
@@ -109,8 +110,8 @@ class UserRepository(BaseRepository):
 
     async def get_user_by_phone(self, phone: str) -> UserInDB | None:
         query = """
-            MATCH (user:User {phone_number: $phone})
-            RETURN id(user) AS user_id, user
+            MATCH (phone:Phone {number: $phone})-[:Attached]->(user:User)
+            RETURN id(user) AS user_id, user, phone
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)
@@ -148,41 +149,38 @@ class UserRepository(BaseRepository):
         user.username = username or user.username
         user.first_name = first_name or user.first_name
         user.last_name = last_name or user.last_name
+        user.gender = gender.name
         user.age = age or user.age
         user.country = country or user.country
         user.region = region or user.region
         user.image = image or user.image
-
-        if gender != Gender.undefined:
-            user.gender = gender.name
 
         if password:
             user.change_password(password)
 
         query = """
             MATCH (user:User)
-            WHERE id(user) = $user.id
+            WHERE id(user) = $id
             SET
                 user.username = $username,
                 user.salt = $salt,
                 user.password = $password
         """
 
-        await self.session.run(query)
+        await self.session.run(query, **user.__dict__)
 
         return await self.get_user_by_id(user.id)
 
     async def change_user_phone_by_user_id(self, user_id: int, *, phone: str) -> UserInDB | None:
         query = """
-            MATCH (user:User)
+            MATCH (phone:Phone)-[r:Attached]->(user:User)
             WHERE id(user) = $user_id
-            MATCH (newPhone:Phone)
-            WHERE newPhone.number = "{phone}"
+            MATCH (newPhone:Phone {number: $phone})
             CREATE (newPhone)-[:Attached]->(user)
             DELETE r
         """
 
-        await self.session.run(query)
+        await self.session.run(query, user_id=user_id, phone=phone)
 
         return await self.get_user_by_id(user_id)
 
@@ -193,7 +191,7 @@ class UserRepository(BaseRepository):
 
         user = UserInDB(
             id=record["user_id"],
-            phone=record["user"]["phone_number"],
+            phone=record["phone"]["number"],
             username=record["user"]["username"],
             password=record["user"]["password"],
             salt=record["user"]["salt"],

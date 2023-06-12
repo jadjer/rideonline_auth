@@ -42,34 +42,32 @@ async def get_verification_code(
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
+    async def generate_verification_code(phone: str) -> VerificationCode:
+        verification: VerificationCode = create_verification_code(settings.verification_code_timeout)
+        verification_message_template = strings.VERIFICATION_CODE_TEMPLATE
+        verification_message = verification_message_template.format(code=verification.code)
+
+        await phone_repository.update_verification_code_by_phone(phone, verification.secret, verification.token, verification.code)
+
+        if not await send_verify_code_to_phone(settings.sms_service, phone, verification_message):
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, strings.SEND_SMS_ERROR)
+
+        return verification
+
     strings = strings_factory.getLanguage(language)
 
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.PHONE_NUMBER_INVALID_ERROR)
 
-    verification_code = await phone_repository.get_verification_code_by_phone(request.phone)
-    if verification_code:
-        if check_verification_code(verification_code.secret, verification_code.token, verification_code.code, settings.verification_code_timeout):
-            return WrapperResponse(
-                payload=PhoneTokenResponse(
-                    phone_token=verification_code.token
-                ),
-                message=strings.VERIFICATION_CODE_ALREADY_EXISTS
-            )
+    verification_code: VerificationCode | None = await phone_repository.get_verification_code_by_phone(request.phone)
+    if not verification_code:
+        verification_code = await generate_verification_code(request.phone)
 
-    verification_code: VerificationCode = create_verification_code(settings.verification_code_timeout)
-    verification_message_template = strings.VERIFICATION_CODE
-    verification_message = verification_message_template.format(code=verification_code.code)
-
-    await phone_repository.update_verification_code_by_phone(request.phone, verification_code.secret, verification_code.token, verification_code.code)
-
-    if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_message):
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, strings.SEND_SMS_ERROR)
+    if not check_verification_code(verification_code.secret, verification_code.token, verification_code.code, settings.verification_code_timeout):
+        verification_code = await generate_verification_code(request.phone)
 
     return WrapperResponse(
-        payload=PhoneTokenResponse(
-            phone_token=verification_code.token
-        )
+        payload=PhoneTokenResponse(phone_token=verification_code.token)
     )
 
 
@@ -85,31 +83,32 @@ async def register(
     strings = strings_factory.getLanguage(language)
 
     verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
+    if not verification_code:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
 
     if not check_verification_code(verification_code.secret, request.verification_token, request.verification_code, settings.verification_code_timeout):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
+
+    if await phone_repository.is_attached_by_phone(request.phone):
+        raise HTTPException(status.HTTP_409_CONFLICT, strings.PHONE_NUMBER_TAKEN)
 
     if await user_repository.is_exists(request.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
+        raise HTTPException(status.HTTP_409_CONFLICT, strings.USERNAME_TAKEN)
 
     user = await user_repository.create_user(**request.__dict__)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+    if user:
+        token_access, token_refresh = create_tokens_for_user(user.id, user.username, settings.private_key)
 
-    token_access, token_refresh = create_tokens_for_user(
-        user_id=user.id,
-        username=user.username,
-        secret_key=settings.private_key
-    )
+        await token_repository.update_token(user.id, token_refresh)
 
-    await token_repository.update_token(user.id, token_refresh)
-
-    return WrapperResponse(
-        payload=UserWithTokenResponse(
-            user=User(**user.__dict__),
-            token=Token(token_access=token_access, token_refresh=token_refresh)
+        return WrapperResponse(
+            payload=UserWithTokenResponse(
+                user=User(**user.__dict__),
+                token=Token(token_access=token_access, token_refresh=token_refresh)
+            )
         )
-    )
+
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_CREATE_ERROR)
 
 
 @router.post("/login", status_code=status.HTTP_200_OK, name="auth:login")
@@ -123,17 +122,14 @@ async def login(
     strings = strings_factory.getLanguage(language)
 
     user = await user_repository.get_user_by_username(request.username)
+
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
     if not user.check_password(request.password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.INCORRECT_LOGIN_INPUT)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.INCORRECT_LOGIN_INPUT)
 
-    token_access, token_refresh = create_tokens_for_user(
-        user_id=user.id,
-        username=user.username,
-        secret_key=settings.private_key
-    )
+    token_access, token_refresh = create_tokens_for_user(user.id, user.username, settings.private_key)
 
     await token_repository.update_token(user.id, token_refresh)
 
@@ -155,27 +151,25 @@ async def change_password(
 ) -> WrapperResponse:
     strings = strings_factory.getLanguage(language)
 
-    if not await phone_repository.verify_phone_by_code_and_token(request.phone,
-                                                                 request.verification_code,
-                                                                 request.phone_token):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+    verification_code = await phone_repository.get_verification_code_by_phone(request.phone)
+    if not verification_code:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
+
+    if not check_verification_code(verification_code.secret, request.verification_token, request.verification_code, settings.verification_code_timeout):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
 
     if not await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PHONE_NUMBER_DOES_NOT_EXIST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.PHONE_NUMBER_DOES_NOT_EXIST)
 
     user = await user_repository.get_user_by_phone(request.phone)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
     user = await user_repository.update_user_by_user_id(user.id, password=request.password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
-    token_access, token_refresh = create_tokens_for_user(
-        user_id=user.id,
-        username=user.username,
-        secret_key=settings.private_key
-    )
+    token_access, token_refresh = create_tokens_for_user(user.id, user.username, settings.private_key)
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
@@ -195,28 +189,20 @@ async def refresh_token(
 ) -> WrapperResponse:
     strings = strings_factory.getLanguage(language)
 
-    user_id = get_user_id_from_refresh_token(
-        access_token=request.token_access,
-        refresh_token=request.token_refresh,
-        secret_key=settings.public_key
-    )
+    user_id = get_user_id_from_refresh_token(request.token_access, request.token_refresh, settings.public_key)
 
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.WRONG_TOKEN_PAIR)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.WRONG_TOKEN_PAIR)
 
     user_token = await token_repository.get_token(user_id)
     if request.token_refresh != user_token:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.REFRESH_TOKEN_IS_REVOKED)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.REFRESH_TOKEN_IS_REVOKED)
 
     user = await user_repository.get_user_by_id(user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
-    token_access, token_refresh = create_tokens_for_user(
-        user_id=user.id,
-        username=user.username,
-        secret_key=settings.private_key
-    )
+    token_access, token_refresh = create_tokens_for_user(user.id, user.username, settings.private_key)
 
     await token_repository.update_token(user.id, token_refresh)
 

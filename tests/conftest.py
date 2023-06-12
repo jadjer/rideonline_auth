@@ -24,6 +24,8 @@ from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import Gender, User
+from app.models.domain.verification_code import VerificationCode
+from app.services.verification_code import create_verification_code
 
 
 @pytest.fixture
@@ -74,16 +76,19 @@ def initialized_app(app: FastAPI, session: AsyncSession) -> FastAPI:
 
 @pytest_asyncio.fixture
 async def client(app: FastAPI) -> AsyncClient:
-    async with AsyncClient(
-            app=app,
-            base_url="http://localhost:12345",
-            headers={"Content-Type": "application/json"},
-    ) as client:
+    async with AsyncClient(app=app, base_url="http://localhost:12345", headers={"Content-Type": "application/json"}) as client:
         yield client
 
 
+@pytest.fixture
+def verification_code(settings: AppSettings) -> VerificationCode:
+    verification_code: VerificationCode = create_verification_code(settings.verification_code_timeout)
+
+    return verification_code
+
+
 @pytest_asyncio.fixture
-async def test_user(session: AsyncSession) -> User:
+async def test_user(verification_code: VerificationCode, session: AsyncSession) -> User:
     phone = "+375257654321"
     username = "username"
     password = "password"
@@ -93,18 +98,10 @@ async def test_user(session: AsyncSession) -> User:
     gender = Gender.male
 
     phone_repository = PhoneRepository(session)
-    await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     user_repository = UserRepository(session)
-    user = await user_repository.create_user(
-        phone,
-        username,
-        password,
-        first_name=first_name,
-        last_name=last_name,
-        age=age,
-        gender=gender
-    )
+    user = await user_repository.create_user(phone, username, password, first_name=first_name, last_name=last_name, age=age, gender=gender)
     if not user:
         pytest.raises(Exception)
 
@@ -112,13 +109,13 @@ async def test_user(session: AsyncSession) -> User:
 
 
 @pytest_asyncio.fixture
-async def test_other_user(session: AsyncSession) -> User:
+async def test_other_user(verification_code: VerificationCode, session: AsyncSession) -> User:
     phone = "+375257654322"
     username = "other_username"
     password = "password"
 
     phone_repository = PhoneRepository(session)
-    await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     user_repository = UserRepository(session)
     user = await user_repository.create_user(phone, username, password)
@@ -137,11 +134,7 @@ def authorization_prefix(settings: AppSettings) -> str:
 async def tokens(settings: AppSettings, session: AsyncSession, test_user: User) -> (str, str):
     from app.services.token import create_tokens_for_user
 
-    token_access, token_refresh = create_tokens_for_user(
-        user_id=test_user.id,
-        username=test_user.username,
-        secret_key=settings.private_key
-    )
+    token_access, token_refresh = create_tokens_for_user(test_user.id, test_user.username, settings.private_key)
 
     token_repository = TokenRepository(session)
     await token_repository.update_token(test_user.id, token_refresh)

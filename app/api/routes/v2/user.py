@@ -18,12 +18,16 @@ from app.api.dependencies.authentication import get_current_user_authorizer
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.get_from_path import get_user_id
 from app.api.dependencies.get_from_header import get_language
+from app.core.config import get_app_settings
+from app.core.settings.app import AppSettings
 from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User, UserInDB
+from app.models.domain.verification_code import VerificationCode
 from app.models.schemas.user import UserResponse, UserUpdate, UserChangePhone
 from app.models.schemas.wrapper import WrapperResponse
 from app.resources import strings_factory
+from app.services.verification_code import check_verification_code
 
 router = APIRouter()
 
@@ -78,23 +82,26 @@ async def change_phone_for_current_user(
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
+        settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
     strings = strings_factory.getLanguage(language)
 
-    if not await phone_repository.verify_phone_by_code_and_token(request.phone,
-                                                                 request.verification_code,
-                                                                 request.phone_token):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+    verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
+    if not verification_code:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
+
+    if not check_verification_code(verification_code.secret, request.verification_token, request.verification_code, settings.verification_code_timeout):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
 
     if request.phone == user.phone:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
+        raise HTTPException(status.HTTP_409_CONFLICT, strings.PHONE_NUMBER_TAKEN)
 
     if await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
+        raise HTTPException(status.HTTP_409_CONFLICT, strings.PHONE_NUMBER_TAKEN)
 
     user: User = await user_repository.change_user_phone_by_user_id(user.id, phone=request.phone)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
         payload=UserResponse(

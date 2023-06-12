@@ -22,22 +22,22 @@ from app.models.domain.verification_code import VerificationCode
 class PhoneRepository(BaseRepository):
     async def update_verification_code_by_phone(self, phone: str, secret: str, token: str, code: int):
         query = """
-            MERGE (user:User {phone_number: $phone})
+            MERGE (phone:Phone {number: $phone})
             SET
-                user.phone_secret = $secret,
-                user.phone_verification_token = $token,
-                user.phone_verification_code = $code
+                phone.secret = $secret,
+                phone.verification_token = $token,
+                phone.verification_code = $code
         """
 
         await self.session.run(query, phone=phone, secret=secret, token=token, code=code)
 
     async def get_verification_code_by_phone(self, phone: str) -> VerificationCode | None:
         query = """
-            MATCH (user:User {phone_number: $phone})
+            MATCH (phone:Phone {number: $phone})
             RETURN
-                user.phone_secret AS secret,
-                user.phone_verification_token AS token,
-                user.phone_verification_code AS verification_code
+                phone.secret AS secret,
+                phone.verification_token AS verification_token,
+                phone.verification_code AS verification_code
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)
@@ -48,11 +48,25 @@ class PhoneRepository(BaseRepository):
             return None
 
         secret: str = record["secret"]
-        token: str = record["token"]
+        verification_token: str = record["verification_token"]
         verification_code: int = record["verification_code"]
 
         return VerificationCode(
             secret=secret,
-            token=token,
+            token=verification_token,
             code=verification_code
         )
+
+    async def is_attached_by_phone(self, phone: str) -> bool:
+        query = """
+               MATCH (phone:Phone {number: $phone})-[:Attached]->()
+               RETURN phone
+           """
+
+        result: AsyncResult = await self.session.run(query, phone=phone)
+        record: Record | None = await result.single()
+
+        if record:
+            return True
+
+        return False

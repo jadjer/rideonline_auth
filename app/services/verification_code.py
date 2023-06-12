@@ -23,21 +23,21 @@ AUTH_ISSUER = "rideonline_auth"
 
 def create_verification_code(interval: int) -> VerificationCode:
     secret: str = random_base32()
-    token: str = random_base32()
+    verification_token: str = random_base32()
 
-    otp = TOTP(secret + token, issuer=AUTH_ISSUER, interval=interval)
+    otp = TOTP(secret + verification_token, issuer=AUTH_ISSUER, interval=interval)
 
     verification_code = otp.now()
 
     return VerificationCode(
         secret=secret,
-        token=token,
+        token=verification_token,
         code=verification_code,
     )
 
 
-def check_verification_code(secret: str, token: str, verification_code: int, interval: int) -> bool:
-    otp = TOTP(secret + token, issuer=AUTH_ISSUER, interval=interval)
+def check_verification_code(secret: str, verification_token: str, verification_code: int, interval: int) -> bool:
+    otp = TOTP(secret + verification_token, issuer=AUTH_ISSUER, interval=interval)
 
     is_valid = otp.verify(str(verification_code))
     if is_valid:

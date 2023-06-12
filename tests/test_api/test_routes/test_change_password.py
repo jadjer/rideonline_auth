@@ -22,18 +22,18 @@ from app.models.domain.user import User
 
 
 @pytest.mark.asyncio
-async def test_user_success_change_password_without_auth(initialized_app, client, test_user, session):
+async def test_user_success_change_password_without_auth(initialized_app, client, session, test_user, verification_code):
     phone = "+375257654321"
     password = "password"
 
     phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     change_password_json = {
         "phone": phone,
         "password": password,
-        "verification_code": verification_code,
-        "phone_token": phone_token,
+        "verification_code": verification_code.code,
+        "verification_token": verification_code.token,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
@@ -42,18 +42,18 @@ async def test_user_success_change_password_without_auth(initialized_app, client
 
 
 @pytest.mark.asyncio
-async def test_unregistered_user_can_not_change_password_without_auth(initialized_app, client, session):
+async def test_unregistered_user_can_not_change_password_without_auth(initialized_app, client, session, verification_code):
     phone = "+375257654321"
     password = "password"
 
     phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     change_password_json = {
         "phone": phone,
         "password": password,
-        "verification_code": verification_code,
-        "phone_token": phone_token,
+        "verification_code": verification_code.code,
+        "verification_token": verification_code.token,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:change-password"), json=change_password_json)
@@ -62,7 +62,7 @@ async def test_unregistered_user_can_not_change_password_without_auth(initialize
 
 
 @pytest.mark.asyncio
-async def test_user_success_change_password(initialized_app: FastAPI, authorized_client: AsyncClient, test_user: User):
+async def test_user_success_change_password(initialized_app, authorized_client, test_user):
     change_password_json = {
         "password": "password",
     }
@@ -76,7 +76,7 @@ async def test_user_success_change_password(initialized_app: FastAPI, authorized
 
 
 @pytest.mark.asyncio
-async def test_unregistered_user_can_not_change_password(initialized_app: FastAPI, client: AsyncClient):
+async def test_unregistered_user_can_not_change_password(initialized_app, client):
     change_password_json = {
         "password": "password",
     }

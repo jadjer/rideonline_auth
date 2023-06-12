@@ -18,24 +18,26 @@ from fastapi import status
 
 from app.database.repositories.user_repository import UserRepository
 from app.database.repositories.phone_repository import PhoneRepository
+from app.models.domain.verification_code import VerificationCode
 from app.models.schemas.wrapper import WrapperResponse
+from app.services.verification_code import create_verification_code
 
 
 @pytest.mark.asyncio
-async def test_user_success_registration(initialized_app, client, session):
+async def test_user_success_registration(initialized_app, client, session, verification_code):
     phone = "+375257654321"
     username = "username"
     password = "password"
 
-    verification_repo = PhoneRepository(session)
-    verification_code, phone_token = await verification_repo.create_verification_code_by_phone(phone)
+    phone_repository = PhoneRepository(session)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     registration_json = {
         "phone": phone,
         "username": username,
         "password": password,
-        "verification_code": verification_code,
-        "phone_token": phone_token,
+        "verification_token": verification_code.token,
+        "verification_code": verification_code.code,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
@@ -53,18 +55,18 @@ async def test_user_success_registration(initialized_app, client, session):
 
 
 @pytest.mark.asyncio
-async def test_failed_user_registration_when_username_are_taken(initialized_app, client, session, test_user):
+async def test_failed_user_registration_when_username_are_taken(initialized_app, client, session, test_user, verification_code):
     phone = "+375257654322"
 
     phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     registration_json = {
         "phone": phone,
         "username": "username",
         "password": "password",
-        "verification_code": verification_code,
-        "phone_token": phone_token,
+        "verification_token": verification_code.token,
+        "verification_code": verification_code.code,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)
@@ -73,18 +75,18 @@ async def test_failed_user_registration_when_username_are_taken(initialized_app,
 
 
 @pytest.mark.asyncio
-async def test_failed_user_registration_when_phone_are_taken(initialized_app, client, test_user, session):
+async def test_failed_user_registration_when_phone_are_taken(initialized_app, client, session, verification_code, test_user):
     phone = "+375257654321"
 
     phone_repository = PhoneRepository(session)
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(phone)
+    await phone_repository.update_verification_code_by_phone(phone, verification_code.secret, verification_code.token, verification_code.code)
 
     registration_json = {
         "phone": phone,
         "username": "free_username",
         "password": "password",
-        "verification_code": verification_code,
-        "phone_token": phone_token,
+        "verification_token": verification_code.token,
+        "verification_code": verification_code.code,
     }
 
     response = await client.post(initialized_app.url_path_for("auth:register"), json=registration_json)

@@ -44,15 +44,15 @@ class UserCreate(BaseModel):
 
 class UserChangePhone(BaseModel):
     phone: str
+    verification_token: str
     verification_code: int
-    phone_token: str
 
 
 class UserChangePassword(BaseModel):
     phone: str
     password: str
+    verification_token: str
     verification_code: int
-    phone_token: str
 
 
 class UserUpdate(BaseModel):
