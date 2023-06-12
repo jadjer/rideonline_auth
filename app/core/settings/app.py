@@ -32,12 +32,14 @@ class AppSettings(BaseAppSettings):
     title: str = "Ride Online Auth"
     version: str = "v0.0.0"
 
-    database_host: IPvAnyAddress
+    database_host: IPvAnyAddress = "127.0.0.1"
     database_port: int = 7687
-    database_user: str
+    database_user: str = "neo4j"
     database_pass: str
 
-    sms_service: HttpUrl
+    sms_service: HttpUrl = "http://127.0.0.1:10000/api/v1"
+
+    verification_code_timeout: int = 86400
 
     public_key_path: FilePath
     public_key: str = ""

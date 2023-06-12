@@ -27,10 +27,12 @@ class StringsEN(object):
 
     SMS_SERVICE_TEMPORARY_UNAVAILABLE = "Phone validation service temporary unavailable"
     SEND_SMS_ERROR = "Error sending sms to phone"
-    VERIFICATION_CODE = "Your verification code is {code}"
+    VERIFICATION_CODE_TEMPLATE = "Your verification code is {code}"
     VERIFICATION_CODE_CREATE_ERROR = "Can't create new verification code to phone number"
     VERIFICATION_CODE_DOES_NOT_EXISTS = "Verification code doesn't exists"
     VERIFICATION_CODE_IS_WRONG = "Verification code is wrong"
+    VERIFICATION_CODE_ALREADY_EXISTS = "Verification code already exists"
+    VERIFICATION_CODE_WRONG = "Verification code is wrong"
 
     WRONG_TOKEN_PREFIX = "Unsupported authorization type"
     MALFORMED_PAYLOAD = "Could not validate credentials"

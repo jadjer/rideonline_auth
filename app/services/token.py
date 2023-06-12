@@ -34,7 +34,9 @@ def create_token(data: dict, secret_key: str, subject: str, expires_delta: timed
         JWTMeta(exp=expire, sub=subject).dict()
     )
 
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM, access_token=access_token)
+    encoded_jwt = jwt.encode(
+        to_encode, secret_key, algorithm=ALGORITHM, access_token=access_token
+    )
 
     return encoded_jwt
 
@@ -43,18 +45,11 @@ def create_tokens_for_user(user_id: int, username: str, secret_key: str) -> (str
     jwt_user = JWTUser(user_id=user_id, username=username)
 
     token_access = create_token(
-        data=jwt_user.__dict__,
-        secret_key=secret_key,
-        subject=JWT_ACCESS_SUBJECT,
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        jwt_user.__dict__, secret_key, JWT_ACCESS_SUBJECT, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     token_refresh = create_token(
-        data=jwt_user.__dict__,
-        secret_key=secret_key,
-        subject=JWT_REFRESH_SUBJECT,
-        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
-        access_token=token_access
+        jwt_user.__dict__, secret_key, JWT_REFRESH_SUBJECT, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS), token_access
     )
 
     return token_access, token_refresh

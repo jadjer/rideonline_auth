@@ -31,8 +31,8 @@ class UserCreate(BaseModel):
     phone: str
     username: str
     password: str
+    verification_token: str
     verification_code: int
-    phone_token: str
     first_name: str | None = None
     last_name: str | None = None
     gender: Gender = Gender.undefined
@@ -44,15 +44,15 @@ class UserCreate(BaseModel):
 
 class UserChangePhone(BaseModel):
     phone: str
+    verification_token: str
     verification_code: int
-    phone_token: str
 
 
 class UserChangePassword(BaseModel):
     phone: str
     password: str
+    verification_token: str
     verification_code: int
-    phone_token: str
 
 
 class UserUpdate(BaseModel):

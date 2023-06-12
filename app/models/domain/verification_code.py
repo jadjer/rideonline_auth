@@ -1,4 +1,4 @@
-#  Copyright 2022 Pavel Suprunov
+#  Copyright 2023 Pavel Suprunov
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,22 +12,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from httpx import AsyncClient
-from pydantic import HttpUrl
+from pydantic import BaseModel
 
 
-async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, message: str) -> bool:
-    headers = {
-        "Content-Type": "application/json",
-    }
-    request = {
-        "phone": phone,
-        "message": message,
-    }
-
-    async with AsyncClient(base_url=sms_service, headers=headers) as client:
-        response = await client.post("/send", json=request)
-        if response.status_code == 200:
-            return True
-
-        return False
+class VerificationCode(BaseModel):
+    secret: str
+    token: str
+    code: int

@@ -30,10 +30,12 @@ class StringsRU(StringsEN):
 
     SMS_SERVICE_TEMPORARY_UNAVAILABLE = "Сервис отправки сообщений временно не доступен"
     SEND_SMS_ERROR = "Ошибка отправки смс с кодом подтверждеиня на номер телефона"
-    VERIFICATION_CODE = "Код подтверждения {code}"
+    VERIFICATION_CODE_TEMPLATE = "Код подтверждения {code}"
     VERIFICATION_CODE_CREATE_ERROR = "Не удалось создать новый код подтверждения для номера телефона"
     VERIFICATION_CODE_DOES_NOT_EXISTS = "Код подтверждения не найден"
     VERIFICATION_CODE_IS_WRONG = "Неверный код подтверждения"
+    VERIFICATION_CODE_ALREADY_EXISTS = "Код подтверждения существует"
+    VERIFICATION_CODE_WRONG = "Неверный код подтверждения"
 
     WRONG_TOKEN_PREFIX = "Неподдерживаемый тип авторизации"
     MALFORMED_PAYLOAD = "Не действительные данные для входа"

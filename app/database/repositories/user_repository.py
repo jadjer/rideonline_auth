@@ -32,13 +32,13 @@ class UserRepository(BaseRepository):
             first_name: str = "",
             last_name: str = "",
             gender: Gender = Gender.undefined,
-            age: int = 0,
-            country: str = "",
-            region: str = "",
+            age: int = 18,
+            country: str = "Belarus",
+            region: str = "Vitebsk",
             image: HttpUrl = "",
             **kwargs
     ) -> UserInDB | None:
-        user = UserInDB(username=username, phone=phone)
+        user = UserInDB(phone=phone, username=username)
         user.change_password(password)
 
         user.first_name = first_name
@@ -49,25 +49,25 @@ class UserRepository(BaseRepository):
         user.region = region
         user.image = image
 
-        query = f"""
-            MATCH (phone:Phone)
-            WHERE phone.number = $phone
+        query = """
+            MATCH (phone:Phone {number: $phone})
             CREATE (phone)-[:Attached]->(user:User)
-            SET user.username = $username
-            SET user.salt = $salt
-            SET user.password = $password
-            SET user.first_name = $first_name
-            SET user.last_name = $last_name
-            SET user.age = $age
-            SET user.gender = $gender
-            SET user.country = $country
-            SET user.region = $region
-            SET user.image = $image
-            SET user.is_blocked = false
+            SET
+                user.username = $username,
+                user.salt = $salt,
+                user.password = $password,
+                user.first_name = $first_name,
+                user.last_name = $last_name,
+                user.age = $age,
+                user.gender = $gender,
+                user.country = $country,
+                user.region = $region,
+                user.image = $image,
+                user.is_blocked = false
             RETURN id(user) AS user_id
         """
 
-        result: AsyncResult = await self.session.run(query, user.__dict__)
+        result: AsyncResult = await self.session.run(query, **user.__dict__)
 
         try:
             record: Record | None = await result.single()
@@ -84,39 +84,37 @@ class UserRepository(BaseRepository):
         return user
 
     async def get_user_by_id(self, user_id: int) -> UserInDB | None:
-        query = f"""
+        query = """
             MATCH (phone:Phone)-[:Attached]->(user:User)
-            WHERE id(user) = {user_id}
+            WHERE id(user) = $user_id
             RETURN id(user) AS user_id, user, phone
         """
 
-        result: AsyncResult = await self.session.run(query)
+        result: AsyncResult = await self.session.run(query, user_id=user_id)
         record: Record | None = await result.single()
         user: UserInDB = self._get_user_from_record(record)
 
         return user
 
     async def get_user_by_username(self, username: str) -> UserInDB | None:
-        query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User)
-            WHERE user.username = "{username}"
+        query = """
+            MATCH (phone:Phone)-[:Attached]->(user:User {username: $username})
             RETURN id(user) AS user_id, user, phone
         """
 
-        result: AsyncResult = await self.session.run(query)
+        result: AsyncResult = await self.session.run(query, username=username)
         record: Record | None = await result.single()
         user: UserInDB = self._get_user_from_record(record)
 
         return user
 
     async def get_user_by_phone(self, phone: str) -> UserInDB | None:
-        query = f"""
-            MATCH (phone:Phone)-[:Attached]->(user:User)
-            WHERE phone.number = "{phone}"
+        query = """
+            MATCH (phone:Phone {number: $phone})-[:Attached]->(user:User)
             RETURN id(user) AS user_id, user, phone
         """
 
-        result: AsyncResult = await self.session.run(query)
+        result: AsyncResult = await self.session.run(query, phone=phone)
         record: Record | None = await result.single()
         user: UserInDB = self._get_user_from_record(record)
 
@@ -151,40 +149,38 @@ class UserRepository(BaseRepository):
         user.username = username or user.username
         user.first_name = first_name or user.first_name
         user.last_name = last_name or user.last_name
+        user.gender = gender.name
         user.age = age or user.age
         user.country = country or user.country
         user.region = region or user.region
         user.image = image or user.image
 
-        if gender != Gender.undefined:
-            user.gender = gender.name
-
         if password:
             user.change_password(password)
 
-        query = f"""
+        query = """
             MATCH (user:User)
-            WHERE id(user) = {user.id}
-            SET user.username = "{user.username}"
-            SET user.salt = "{user.salt}"
-            SET user.password = "{user.password}"
+            WHERE id(user) = $id
+            SET
+                user.username = $username,
+                user.salt = $salt,
+                user.password = $password
         """
 
-        await self.session.run(query)
+        await self.session.run(query, **user.__dict__)
 
         return await self.get_user_by_id(user.id)
 
     async def change_user_phone_by_user_id(self, user_id: int, *, phone: str) -> UserInDB | None:
-        query = f"""
+        query = """
             MATCH (phone:Phone)-[r:Attached]->(user:User)
-            WHERE id(user) = {user_id}
-            MATCH (newPhone:Phone)
-            WHERE newPhone.number = "{phone}"
+            WHERE id(user) = $user_id
+            MATCH (newPhone:Phone {number: $phone})
             CREATE (newPhone)-[:Attached]->(user)
             DELETE r
         """
 
-        await self.session.run(query)
+        await self.session.run(query, user_id=user_id, phone=phone)
 
         return await self.get_user_by_id(user_id)
 
