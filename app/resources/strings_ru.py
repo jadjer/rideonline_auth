@@ -34,6 +34,7 @@ class StringsRU(StringsEN):
     VERIFICATION_CODE_CREATE_ERROR = "Не удалось создать новый код подтверждения для номера телефона"
     VERIFICATION_CODE_DOES_NOT_EXISTS = "Код подтверждения не найден"
     VERIFICATION_CODE_IS_WRONG = "Неверный код подтверждения"
+    VERIFICATION_CODE_ALREADY_EXISTS = "Код подтверждения существует"
 
     WRONG_TOKEN_PREFIX = "Неподдерживаемый тип авторизации"
     MALFORMED_PAYLOAD = "Не действительные данные для входа"

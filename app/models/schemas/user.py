@@ -31,8 +31,8 @@ class UserCreate(BaseModel):
     phone: str
     username: str
     password: str
+    verification_token: str
     verification_code: int
-    phone_token: str
     first_name: str | None = None
     last_name: str | None = None
     gender: Gender = Gender.undefined

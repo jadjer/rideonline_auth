@@ -22,6 +22,7 @@ from app.database.repositories.phone_repository import PhoneRepository
 from app.database.repositories.token_repository import TokenRepository
 from app.database.repositories.user_repository import UserRepository
 from app.models.domain.user import User
+from app.models.domain.verification_code import VerificationCode
 from app.models.schemas.phone import Phone, PhoneTokenResponse
 from app.models.schemas.user import UserCreate, UserLogin, UserWithTokenResponse, Token, UserChangePassword
 from app.models.schemas.wrapper import WrapperResponse
@@ -29,6 +30,7 @@ from app.services.token import create_tokens_for_user, get_user_id_from_refresh_
 from app.services.validate import check_phone_is_valid
 from app.services.sms import send_verify_code_to_phone
 from app.resources import strings_factory
+from app.services.verification_code import create_verification_code, check_verification_code
 
 router = APIRouter()
 
@@ -43,18 +45,31 @@ async def get_verification_code(
     strings = strings_factory.getLanguage(language)
 
     if not check_phone_is_valid(request.phone):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.PHONE_NUMBER_INVALID_ERROR)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.PHONE_NUMBER_INVALID_ERROR)
 
-    verification_code, phone_token = await phone_repository.create_verification_code_by_phone(request.phone)
+    verification_code = await phone_repository.get_verification_code_by_phone(request.phone)
+    if verification_code:
+        if check_verification_code(verification_code.secret, verification_code.token, verification_code.code, settings.verification_code_timeout):
+            return WrapperResponse(
+                payload=PhoneTokenResponse(
+                    phone_token=verification_code.token
+                ),
+                message=strings.VERIFICATION_CODE_ALREADY_EXISTS
+            )
 
-    verification_message = strings.VERIFICATION_CODE
-    verification_message.format(code=verification_code)
+    verification_code: VerificationCode = create_verification_code(settings.verification_code_timeout)
+    verification_message_template = strings.VERIFICATION_CODE
+    verification_message = verification_message_template.format(code=verification_code.code)
+
+    await phone_repository.update_verification_code_by_phone(request.phone, verification_code.secret, verification_code.token, verification_code.code)
 
     if not await send_verify_code_to_phone(settings.sms_service, request.phone, verification_message):
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=strings.SEND_SMS_ERROR)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, strings.SEND_SMS_ERROR)
 
     return WrapperResponse(
-        payload=PhoneTokenResponse(phone_token=phone_token)
+        payload=PhoneTokenResponse(
+            phone_token=verification_code.token
+        )
     )
 
 
@@ -69,13 +84,10 @@ async def register(
 ) -> WrapperResponse:
     strings = strings_factory.getLanguage(language)
 
-    if not await phone_repository.verify_phone_by_code_and_token(request.phone,
-                                                                 request.verification_code,
-                                                                 request.phone_token):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
+    verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
 
-    if await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.PHONE_NUMBER_TAKEN)
+    if not check_verification_code(verification_code.secret, request.verification_token, request.verification_code, settings.verification_code_timeout):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=strings.VERIFICATION_CODE_IS_WRONG)
 
     if await user_repository.is_exists(request.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)

@@ -13,63 +13,46 @@
 #  limitations under the License.
 
 from loguru import logger
-from pyotp import TOTP, random_base32
 from neo4j import AsyncResult, Record
 
 from app.database.repositories.base_repository import BaseRepository
+from app.models.domain.verification_code import VerificationCode
 
 
 class PhoneRepository(BaseRepository):
-    async def create_verification_code_by_phone(self, phone: str) -> (str, str):
-        secret: str = random_base32()
-        token: str = random_base32()
-
-        query = f"""
-            MERGE (phone:Phone {{number: "{phone}"}})
-            SET phone.secret = "{secret}"
-        """
-
-        await self.session.run(query)
-
-        otp = TOTP(secret + token, interval=300, name=phone)
-        verification_code = otp.now()
-
-        return verification_code, token
-
-    async def verify_phone_by_code_and_token(self, phone: str, verification_code: int, token: str) -> bool:
-        query = f"""
-            MATCH (phone:Phone)
-            WHERE phone.number = "{phone}"
-            RETURN phone.secret AS secret
-        """
-
-        result: AsyncResult = await self.session.run(query)
-        record: Record | None = await result.single()
-
-        if not record:
-            logger.warning("Query result is empty")
-            return False
-
-        secret: str = record["secret"]
-
-        otp = TOTP(secret + token, interval=300, name=phone)
-
-        is_valid = otp.verify(str(verification_code))
-        if is_valid:
-            return True
-
-        return False
-
-    async def is_attached_by_phone(self, phone: str) -> bool:
+    async def update_verification_code_by_phone(self, phone: str, secret: str, token: str, code: int):
         query = """
-            MATCH (phone:Phone {number: $phone})-[:Attached]->()
-            RETURN phone
+            MERGE (user:User {phone_number: $phone})
+            SET
+                user.phone_secret = $secret,
+                user.phone_verification_token = $token,
+                user.phone_verification_code = $code
+        """
+
+        await self.session.run(query, phone=phone, secret=secret, token=token, code=code)
+
+    async def get_verification_code_by_phone(self, phone: str) -> VerificationCode | None:
+        query = """
+            MATCH (user:User {phone_number: $phone})
+            RETURN
+                user.phone_secret AS secret,
+                user.phone_verification_token AS token,
+                user.phone_verification_code AS verification_code
         """
 
         result: AsyncResult = await self.session.run(query, phone=phone)
         record: Record | None = await result.single()
 
-        if record:
-            return True
+        if not record:
+            logger.warning("Query result is empty")
+            return None
 
-        return False
+        secret: str = record["secret"]
+        token: str = record["token"]
+        verification_code: int = record["verification_code"]
+
+        return VerificationCode(
+            secret=secret,
+            token=token,
+            code=verification_code
+        )
