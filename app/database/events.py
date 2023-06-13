@@ -30,6 +30,13 @@ async def connect_to_db(app: FastAPI, settings: AppSettings) -> AsyncDriver:
             settings.database_pass
         )
     )
+
+    logger.info("Check connection...")
+    await driver.verify_connectivity()
+
+    logger.info("Check auth...")
+    await driver.verify_authentication()
+
     session: AsyncSession = driver.session()
 
     app.state.driver = driver
