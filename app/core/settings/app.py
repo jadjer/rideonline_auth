@@ -17,7 +17,7 @@ import sys
 
 from typing import Any, Dict, List, Tuple
 from loguru import logger
-from pydantic import FilePath, HttpUrl, IPvAnyAddress
+from pydantic import FilePath, IPvAnyAddress, AnyHttpUrl
 
 from app.core.logging import InterceptHandler
 from app.core.settings.base import BaseAppSettings
@@ -37,7 +37,7 @@ class AppSettings(BaseAppSettings):
     database_user: str = "neo4j"
     database_pass: str
 
-    sms_service: HttpUrl = "http://127.0.0.1:10000/api/v1"
+    sms_service: AnyHttpUrl = "http://127.0.0.1:10000/api/v1"
 
     verification_code_timeout: int = 86400
 

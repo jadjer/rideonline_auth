@@ -1,0 +1,32 @@
+---
+version: '3'
+
+networks:
+  rideonline:
+
+services:
+  sms:
+    image: ghcr.io/jadjer/rideonline_sms:latest
+    networks:
+      - rideonline
+    ports:
+      - "10000:8000"
+
+  auth:
+    image: ghcr.io/jadjer/rideonline_auth:latest
+    privileged: true
+    networks:
+      - rideonline
+    ports:
+      - "8000:8000"
+    volumes:
+      - $HOME/keys:/app/keys
+    environment:
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASS=${DATABASE_PASS}
+      - PUBLIC_KEY_PATH=/app/keys/public_key.pem
+      - PRIVATE_KEY_PATH=/app/keys/private_key.pem
+      - SMS_SERVICE=http://sms:8000/api/v1
+    depends_on:
+      - sms
