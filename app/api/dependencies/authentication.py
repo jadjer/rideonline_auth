@@ -14,7 +14,6 @@
 
 from loguru import logger
 from typing import Callable
-
 from fastapi import Depends, HTTPException, Security, status
 
 from app.api.dependencies.database import get_repository
@@ -26,6 +25,7 @@ from app.models.domain.user import UserInDB
 from app.resources import strings_factory
 from app.services.auth_token_header import AuthTokenHeader
 from app.services.token import get_user_id_from_access_token
+
 
 HEADER_KEY = "Authorization"
 
@@ -53,7 +53,7 @@ def _get_authorization_header(
     return token
 
 
-async def _get_user_id_from_token(
+def _get_user_id_from_token(
         language: str = Depends(get_language),
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
