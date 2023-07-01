@@ -17,7 +17,7 @@ import sys
 
 from typing import Any, Dict, List, Tuple
 from loguru import logger
-from pydantic import FilePath, IPvAnyAddress, AnyHttpUrl
+from pydantic import FilePath, AnyHttpUrl
 
 from app.core.logging import InterceptHandler
 from app.core.settings.base import BaseAppSettings
@@ -32,7 +32,7 @@ class AppSettings(BaseAppSettings):
     title: str = "Ride Online Auth"
     version: str = "v0.0.0"
 
-    database_host: IPvAnyAddress = "127.0.0.1"
+    database_host: str = "127.0.0.1"
     database_port: int = 7687
     database_user: str = "neo4j"
     database_pass: str
