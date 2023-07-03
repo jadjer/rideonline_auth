@@ -36,10 +36,10 @@ def create_verification_code(interval: int) -> VerificationCode:
     )
 
 
-def check_verification_code(secret: str, verification_token: str, verification_code: int, interval: int) -> bool:
+def check_verification_code(secret: str, verification_token: str, verification_code: str, interval: int) -> bool:
     otp = TOTP(secret + verification_token, issuer=AUTH_ISSUER, interval=interval)
 
-    is_valid = otp.verify(str(verification_code))
+    is_valid = otp.verify(verification_code)
     if is_valid:
         return True
 

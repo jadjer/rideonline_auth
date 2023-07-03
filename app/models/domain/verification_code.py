@@ -18,4 +18,4 @@ from pydantic import BaseModel
 class VerificationCode(BaseModel):
     secret: str
     token: str
-    code: int
+    code: str
