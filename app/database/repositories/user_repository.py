@@ -195,6 +195,13 @@ class UserRepository(BaseRepository):
             username=record["user"]["username"],
             password=record["user"]["password"],
             salt=record["user"]["salt"],
+            first_name=record["user"]["first_name"],
+            last_name=record["user"]["last_name"],
+            age=record["user"]["age"],
+            gender=record["user"]["gender"],
+            country=record["user"]["country"],
+            region=record["user"]["region"],
+            image=record["user"]["image"],
             is_blocked=record["user"]["is_blocked"],
         )
 
