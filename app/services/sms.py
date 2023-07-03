@@ -13,10 +13,10 @@
 #  limitations under the License.
 
 from httpx import AsyncClient
-from pydantic import HttpUrl
+from pydantic import AnyHttpUrl
 
 
-async def send_verify_code_to_phone(sms_service: HttpUrl, phone: str, message: str) -> bool:
+async def send_verify_code_to_phone(sms_service: AnyHttpUrl, phone: str, message: str) -> bool:
     headers = {
         "Content-Type": "application/json",
     }
