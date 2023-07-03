@@ -84,7 +84,7 @@ async def register(
 
     verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
     if not verification_code:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_DOES_NOT_EXISTS)
 
     if not check_verification_code(verification_code.secret, request.verification_token, request.verification_code, settings.verification_code_timeout):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.VERIFICATION_CODE_IS_WRONG)
