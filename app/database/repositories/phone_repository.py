@@ -20,7 +20,7 @@ from app.models.domain.verification_code import VerificationCode
 
 
 class PhoneRepository(BaseRepository):
-    async def update_verification_code_by_phone(self, phone: str, secret: str, token: str, code: int):
+    async def update_verification_code_by_phone(self, phone: str, secret: str, token: str, code: str):
         query = """
             MERGE (phone:Phone {number: $phone})
             SET
