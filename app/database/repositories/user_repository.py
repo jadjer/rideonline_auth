@@ -35,7 +35,7 @@ class UserRepository(BaseRepository):
             age: int = 18,
             country: str = "Belarus",
             region: str = "Vitebsk",
-            image: HttpUrl = "",
+            image: str = "",
             **kwargs
     ) -> UserInDB | None:
         user = UserInDB(phone=phone, username=username)

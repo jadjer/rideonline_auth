@@ -33,7 +33,7 @@ async def exist_username(
         language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     if not await user_repository.is_exists(request.username):
         raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USERNAME_DOES_NOT_EXIST)
@@ -47,7 +47,7 @@ async def exist_phone(
         language: str = Depends(get_language),
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.PHONE_NUMBER_INVALID_ERROR)

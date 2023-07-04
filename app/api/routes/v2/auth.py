@@ -54,7 +54,7 @@ async def get_verification_code(
 
         return verification
 
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     if not check_phone_is_valid(request.phone):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.PHONE_NUMBER_INVALID_ERROR)
@@ -67,7 +67,7 @@ async def get_verification_code(
         verification_code = await generate_verification_code(request.phone)
 
     return WrapperResponse(
-        payload=PhoneTokenResponse(phone_token=verification_code.token)
+        payload=PhoneTokenResponse(verification_token=verification_code.token)
     )
 
 
@@ -80,7 +80,7 @@ async def register(
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
     if not verification_code:
@@ -101,6 +101,8 @@ async def register(
 
         await token_repository.update_token(user.id, token_refresh)
 
+        print(user.__dict__)
+
         return WrapperResponse(
             payload=UserWithTokenResponse(
                 user=User(**user.__dict__),
@@ -119,7 +121,7 @@ async def login(
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user = await user_repository.get_user_by_username(request.username)
 
@@ -149,7 +151,7 @@ async def change_password(
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     verification_code = await phone_repository.get_verification_code_by_phone(request.phone)
     if not verification_code:
@@ -187,7 +189,7 @@ async def refresh_token(
         token_repository: TokenRepository = Depends(get_repository(TokenRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user_id = get_user_id_from_refresh_token(request.token_access, request.token_refresh, settings.public_key)
 

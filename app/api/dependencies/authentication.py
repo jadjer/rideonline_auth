@@ -36,19 +36,19 @@ def get_current_user_authorizer() -> Callable:
 
 def _get_authorization_header(
         language: str = Depends(get_language),
-        api_key: str = Security(AuthTokenHeader(name=HEADER_KEY)),
+        auth_token: str = Security(AuthTokenHeader(name=HEADER_KEY)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> str:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     try:
-        token_prefix, token = api_key.split(" ")
+        token_prefix, token = auth_token.split(" ")
     except ValueError as exception:
         logger.error(exception)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.WRONG_TOKEN_PREFIX)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, strings.WRONG_TOKEN_PREFIX)
 
     if token_prefix != settings.jwt_token_prefix:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.WRONG_TOKEN_PREFIX)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, strings.WRONG_TOKEN_PREFIX)
 
     return token
 
@@ -58,11 +58,11 @@ def _get_user_id_from_token(
         token: str = Depends(_get_authorization_header),
         settings: AppSettings = Depends(get_app_settings),
 ) -> int:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user_id = get_user_id_from_access_token(token, settings.public_key)
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.MALFORMED_PAYLOAD)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, strings.MALFORMED_PAYLOAD)
 
     return user_id
 
@@ -72,11 +72,11 @@ async def _get_current_user(
         user_id: int = Depends(_get_user_id_from_token),
         user_repository: UserRepository = Depends(get_repository(UserRepository))
 ) -> UserInDB:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user = await user_repository.get_user_by_id(user_id)
     if not user:
         logger.error(f"User (id: {user_id}) doesn't exist")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, strings.USER_DOES_NOT_EXIST_ERROR)
 
     return user

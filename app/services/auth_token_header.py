@@ -42,5 +42,5 @@ class AuthTokenHeader(APIKeyBase):
         if not self.auto_error:
             return None
 
-        strings = strings_factory.getLanguage(language)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=strings.AUTHENTICATION_REQUIRED)
+        strings = strings_factory.get_language(language)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, strings.AUTHENTICATION_REQUIRED)

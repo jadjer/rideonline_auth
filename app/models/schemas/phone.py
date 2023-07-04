@@ -20,4 +20,4 @@ class Phone(BaseModel):
 
 
 class PhoneTokenResponse(BaseModel):
-    phone_token: str
+    verification_token: str
