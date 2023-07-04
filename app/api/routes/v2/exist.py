@@ -21,6 +21,7 @@ from app.database.repositories.user_repository import UserRepository
 from app.models.schemas.phone import Phone
 from app.models.schemas.user import Username
 from app.models.schemas.wrapper import WrapperResponse
+from app.services.validate import check_phone_is_valid
 from app.resources import strings_factory
 
 router = APIRouter()
@@ -35,7 +36,7 @@ async def exist_username(
     strings = strings_factory.getLanguage(language)
 
     if not await user_repository.is_exists(request.username):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USERNAME_DOES_NOT_EXIST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USERNAME_DOES_NOT_EXIST)
 
     return WrapperResponse()
 
@@ -48,7 +49,10 @@ async def exist_phone(
 ) -> WrapperResponse:
     strings = strings_factory.getLanguage(language)
 
+    if not check_phone_is_valid(request.phone):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, strings.PHONE_NUMBER_INVALID_ERROR)
+
     if not await phone_repository.is_attached_by_phone(request.phone):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.PHONE_NUMBER_DOES_NOT_EXIST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.PHONE_NUMBER_DOES_NOT_EXIST)
 
     return WrapperResponse()
