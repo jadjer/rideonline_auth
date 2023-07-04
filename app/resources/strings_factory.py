@@ -16,7 +16,7 @@ from .strings_en import StringsEN
 from .strings_ru import StringsRU
 
 
-def getLanguage(language: str) -> StringsEN:
+def get_language(language: str) -> StringsEN:
     if language == "ru":
         return StringsRU()
 

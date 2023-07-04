@@ -33,13 +33,13 @@ class UserCreate(BaseModel):
     password: str
     verification_token: str
     verification_code: str
-    first_name: str | None = None
-    last_name: str | None = None
+    first_name: str = ""
+    last_name: str = ""
     gender: Gender = Gender.undefined
-    age: int | None = None
-    country: str | None = None
-    region: str | None = None
-    image: HttpUrl | None = None
+    age: int = 18
+    country: str = ""
+    region: str = ""
+    image: HttpUrl = ""
 
 
 class UserChangePhone(BaseModel):
@@ -56,15 +56,15 @@ class UserChangePassword(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: str | None = None
-    password: str | None = None
-    first_name: str | None = None
-    last_name: str | None = None
+    username: str = ""
+    password: str = ""
+    first_name: str = ""
+    last_name: str = ""
     gender: Gender = Gender.undefined
-    age: int | None = None
-    country: str | None = None
-    region: str | None = None
-    image: HttpUrl | None = None
+    age: int = 18
+    country: str = ""
+    region: str = ""
+    image: HttpUrl = ""
 
 
 class UserResponse(BaseModel):

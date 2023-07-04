@@ -38,7 +38,7 @@ async def get_current_user(
         user: User = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user: User = await user_repository.get_user_by_username(user.username)
     if not user:
@@ -58,7 +58,7 @@ async def update_current_user(
         user: UserInDB = Depends(get_current_user_authorizer()),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     if request.username and request.username != user.username:
         if await user_repository.is_exists(request.username):
@@ -84,7 +84,7 @@ async def change_phone_for_current_user(
         phone_repository: PhoneRepository = Depends(get_repository(PhoneRepository)),
         settings: AppSettings = Depends(get_app_settings),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     verification_code: VerificationCode = await phone_repository.get_verification_code_by_phone(request.phone)
     if not verification_code:
@@ -116,11 +116,11 @@ async def get_user_by_id(
         language: str = Depends(get_language),
         user_repository: UserRepository = Depends(get_repository(UserRepository)),
 ) -> WrapperResponse:
-    strings = strings_factory.getLanguage(language)
+    strings = strings_factory.get_language(language)
 
     user = await user_repository.get_user_by_id(user_id)
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
         payload=UserResponse(

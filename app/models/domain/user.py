@@ -29,13 +29,13 @@ class Gender(Enum):
 class User(IDModelMixin):
     phone: str
     username: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    first_name: str = ""
+    last_name: str = ""
     gender: Gender = Gender.undefined
-    age: Optional[int] = None
-    country: Optional[str] = None
-    region: Optional[str] = None
-    image: Optional[HttpUrl] = None
+    age: int = 18
+    country: str = ""
+    region: str = ""
+    image: str = ""
     is_blocked: bool = False
 
 
