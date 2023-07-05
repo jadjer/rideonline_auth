@@ -38,17 +38,6 @@ class UserRepository(BaseRepository):
             image: str = "",
             **kwargs
     ) -> UserInDB | None:
-        user = UserInDB(phone=phone, username=username)
-        user.change_password(password)
-
-        user.first_name = first_name
-        user.last_name = last_name
-        user.gender = gender.name
-        user.age = age
-        user.country = country
-        user.region = region
-        user.image = image
-
         query = """
             MATCH (phone:Phone {number: $phone})
             CREATE (phone)-[:Attached]->(user:User)
@@ -66,6 +55,17 @@ class UserRepository(BaseRepository):
                 user.is_blocked = false
             RETURN id(user) AS user_id
         """
+
+        user = UserInDB(phone=phone, username=username)
+        user.change_password(password)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.gender = gender.name
+        user.age = age
+        user.country = country
+        user.region = region
+        user.image = image
 
         result: AsyncResult = await self.session.run(query, **user.__dict__)
 
@@ -139,7 +139,7 @@ class UserRepository(BaseRepository):
             age: int | None = None,
             country: str | None = None,
             region: str | None = None,
-            image: HttpUrl | None = None,
+            image: str | None = None,
             **kwargs
     ) -> UserInDB | None:
         user = await self.get_user_by_id(user_id)

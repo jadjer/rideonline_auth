@@ -30,13 +30,9 @@ def create_token(data: dict, secret_key: str, subject: str, expires_delta: timed
     expire = datetime.utcnow() + expires_delta
 
     to_encode = data.copy()
-    to_encode.update(
-        JWTMeta(exp=expire, sub=subject).dict()
-    )
+    to_encode.update(JWTMeta(exp=expire, sub=subject).dict())
 
-    encoded_jwt = jwt.encode(
-        to_encode, secret_key, algorithm=ALGORITHM, access_token=access_token
-    )
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM, access_token=access_token)
 
     return encoded_jwt
 
@@ -57,9 +53,7 @@ def create_tokens_for_user(user_id: int, username: str, secret_key: str) -> (str
 
 def get_user_id_from_access_token(access_token: str, secret_key: str) -> int | None:
     try:
-        token_date = jwt.decode(
-            access_token, secret_key, algorithms=[ALGORITHM], subject=JWT_ACCESS_SUBJECT
-        )
+        token_date = jwt.decode(access_token, secret_key, algorithms=[ALGORITHM], subject=JWT_ACCESS_SUBJECT)
         user_data = JWTUser(**token_date)
     except JWTError:
         return None
@@ -74,9 +68,7 @@ def get_user_id_from_access_token(access_token: str, secret_key: str) -> int | N
 
 def get_user_id_from_refresh_token(access_token: str, refresh_token: str, secret_key: str) -> int | None:
     try:
-        token_date = jwt.decode(
-            refresh_token, secret_key, algorithms=[ALGORITHM], subject=JWT_REFRESH_SUBJECT, access_token=access_token
-        )
+        token_date = jwt.decode(refresh_token, secret_key, algorithms=[ALGORITHM], subject=JWT_REFRESH_SUBJECT, access_token=access_token)
         user_data = JWTUser(**token_date)
     except JWTError:
         return None

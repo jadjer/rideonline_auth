@@ -19,13 +19,13 @@ from app.database.repositories.base_repository import BaseRepository
 
 class TokenRepository(BaseRepository):
     async def get_token(self, user_id: int) -> str | None:
-        query = f"""
+        query = """
             MATCH (user:User)
-            WHERE id(user) = {user_id}
+            WHERE id(user) = $user_id
             RETURN user.token as token
         """
 
-        result: AsyncResult = await self.session.run(query)
+        result: AsyncResult = await self.session.run(query, user_id=user_id)
         record: Record | None = await result.single()
 
         if not record:
@@ -36,10 +36,10 @@ class TokenRepository(BaseRepository):
         return token
 
     async def update_token(self, user_id: int, token: str):
-        query = f"""
+        query = """
             MATCH (user:User)
-            WHERE id(user) = {user_id}
-            SET user.token = "{token}"
+            WHERE id(user) = $user_id
+            SET user.token = $token
         """
 
-        await self.session.run(query)
+        await self.session.run(query, user_id=user_id, token=token)
