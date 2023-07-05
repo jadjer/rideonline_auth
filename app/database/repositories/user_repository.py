@@ -149,11 +149,14 @@ class UserRepository(BaseRepository):
         user.username = username or user.username
         user.first_name = first_name or user.first_name
         user.last_name = last_name or user.last_name
-        user.gender = gender.name or user.gender
+        user.gender = user.gender.name
         user.age = age or user.age
         user.country = country or user.country
         user.region = region or user.region
         user.image = image or user.image
+
+        if gender:
+            user.gender = gender.name
 
         if password:
             user.change_password(password)
@@ -171,8 +174,7 @@ class UserRepository(BaseRepository):
                 user.gender = $gender,
                 user.country = $country,
                 user.region = $region,
-                user.image = $image,
-                user.is_blocked = false
+                user.image = $image
         """
 
         await self.session.run(query, **user.__dict__)
