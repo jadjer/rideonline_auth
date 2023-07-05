@@ -139,7 +139,7 @@ class UserRepository(BaseRepository):
             age: int | None = None,
             country: str | None = None,
             region: str | None = None,
-            image: HttpUrl | None = None,
+            image: str | None = None,
             **kwargs
     ) -> UserInDB | None:
         user = await self.get_user_by_id(user_id)
