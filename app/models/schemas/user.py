@@ -56,15 +56,15 @@ class UserChangePassword(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: str = ""
-    password: str = ""
-    first_name: str = ""
-    last_name: str = ""
-    gender: Gender = Gender.undefined
-    age: int = 18
-    country: str = ""
-    region: str = ""
-    image: HttpUrl = ""
+    username: str | None = None
+    password: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: Gender | None = None
+    age: int | None = None
+    country: str | None = None
+    region: str | None = None
+    image: HttpUrl | None = None
 
 
 class UserResponse(BaseModel):

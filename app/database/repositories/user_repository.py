@@ -33,8 +33,8 @@ class UserRepository(BaseRepository):
             last_name: str = "",
             gender: Gender = Gender.undefined,
             age: int = 18,
-            country: str = "Belarus",
-            region: str = "Vitebsk",
+            country: str = "",
+            region: str = "",
             image: str = "",
             **kwargs
     ) -> UserInDB | None:
@@ -135,7 +135,7 @@ class UserRepository(BaseRepository):
             password: str | None = None,
             first_name: str | None = None,
             last_name: str | None = None,
-            gender: Gender = Gender.undefined,
+            gender: Gender | None = None,
             age: int | None = None,
             country: str | None = None,
             region: str | None = None,
@@ -149,7 +149,7 @@ class UserRepository(BaseRepository):
         user.username = username or user.username
         user.first_name = first_name or user.first_name
         user.last_name = last_name or user.last_name
-        user.gender = gender.name
+        user.gender = gender.name or user.gender
         user.age = age or user.age
         user.country = country or user.country
         user.region = region or user.region
@@ -164,7 +164,15 @@ class UserRepository(BaseRepository):
             SET
                 user.username = $username,
                 user.salt = $salt,
-                user.password = $password
+                user.password = $password,
+                user.first_name = $first_name,
+                user.last_name = $last_name,
+                user.age = $age,
+                user.gender = $gender,
+                user.country = $country,
+                user.region = $region,
+                user.image = $image,
+                user.is_blocked = false
         """
 
         await self.session.run(query, **user.__dict__)
