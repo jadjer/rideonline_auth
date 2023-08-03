@@ -12,28 +12,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel, HttpUrl, ConfigDict
+from pydantic import HttpUrl
 
+from app.models.common import BaseAppModel
 from app.models.domain.token import Token
-from app.models.domain.user import User, UserInDB, Gender
+from app.models.domain.user import User, Gender
 
 
-class Username(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class Username(BaseAppModel):
     username: str
 
 
-class UserLogin(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserLogin(BaseAppModel):
     username: str
     password: str
 
 
-class UserCreate(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserCreate(BaseAppModel):
     phone: str
     username: str
     password: str
@@ -48,26 +43,20 @@ class UserCreate(BaseModel):
     image: HttpUrl = ""
 
 
-class UserChangePhone(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserChangePhone(BaseAppModel):
     phone: str
     verification_token: str
     verification_code: str
 
 
-class UserChangePassword(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserChangePassword(BaseAppModel):
     phone: str
     password: str
     verification_token: str
     verification_code: str
 
 
-class UserUpdate(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserUpdate(BaseAppModel):
     username: str | None = None
     password: str | None = None
     first_name: str | None = None
@@ -79,14 +68,10 @@ class UserUpdate(BaseModel):
     image: HttpUrl | None = None
 
 
-class UserResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserResponse(BaseAppModel):
     user: User
 
 
-class UserWithTokenResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class UserWithTokenResponse(BaseAppModel):
     user: User
     token: Token

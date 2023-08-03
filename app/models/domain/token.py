@@ -12,11 +12,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel, ConfigDict
+from app.models.common import BaseAppModel
 
 
-class Token(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class Token(BaseAppModel):
     token_access: str
     token_refresh: str

@@ -13,8 +13,6 @@
 #  limitations under the License.
 
 from enum import Enum
-from typing import Optional
-from pydantic import HttpUrl, ConfigDict
 
 from app.models.common import IDModelMixin
 from app.services import security
@@ -27,8 +25,6 @@ class Gender(Enum):
 
 
 class User(IDModelMixin):
-    model_config = ConfigDict(from_attributes=True)
-
     phone: str
     username: str
     first_name: str = ""
