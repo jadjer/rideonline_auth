@@ -13,14 +13,15 @@
 #  limitations under the License.
 
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+from pydantic import field_validator, BaseModel, Field
 
 
 class DateTimeModelMixin(BaseModel):
     created_at: datetime = None
     updated_at: datetime = None
 
-    @validator("created_at", "updated_at", pre=True)
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
     def default_datetime(cls, value: datetime) -> datetime:
         return value
 
