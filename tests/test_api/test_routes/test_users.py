@@ -73,10 +73,10 @@ async def test_user_can_retrieve_own_profile(initialized_app, authorized_client,
     response = await authorized_client.get(initialized_app.url_path_for("users:get-current-user"))
     assert response.status_code == status.HTTP_200_OK
 
-    result = WrapperResponse(**response.json())
+    result = WrapperResponse.model_validate(response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.payload)
+    user_profile = UserResponse.model_validate(result.payload)
     assert user_profile.user.id == test_user.id
     assert user_profile.user.phone == test_user.phone
     assert user_profile.user.username == test_user.username
@@ -94,11 +94,11 @@ async def test_user_can_update_username_on_own_profile(initialized_app, authoriz
     )
     assert response.status_code == status.HTTP_200_OK
 
-    result = WrapperResponse(**response.json())
+    result = WrapperResponse.model_validate(response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.payload).dict()
-    assert user_profile["user"]["username"] == username
+    user_profile = UserResponse.model_validate(result.payload)
+    assert user_profile.user.username == username
 
 
 @pytest.mark.asyncio
@@ -118,11 +118,11 @@ async def test_user_can_update_phone_on_own_profile(initialized_app, authorized_
     )
     assert response.status_code == status.HTTP_200_OK
 
-    result = WrapperResponse(**response.json())
+    result = WrapperResponse.model_validate(response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.payload).dict()
-    assert user_profile["user"]["phone"] == new_phone
+    user_profile = UserResponse.model_validate(result.payload)
+    assert user_profile.user.phone == new_phone
 
 
 @pytest.mark.asyncio
@@ -137,10 +137,10 @@ async def test_user_can_change_password(initialized_app, authorized_client, sess
     )
     assert response.status_code == status.HTTP_200_OK
 
-    result = WrapperResponse(**response.json())
+    result = WrapperResponse.model_validate(response.json())
     assert result.success
 
-    user_profile = UserResponse(**result.payload)
+    user_profile = UserResponse.model_validate(result.payload)
 
     user_repository = UserRepository(session)
     user = await user_repository.get_user_by_id(user_profile.user.id)

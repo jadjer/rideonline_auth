@@ -12,22 +12,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 
 from app.models.domain.token import Token
-from app.models.domain.user import User, Gender
+from app.models.domain.user import User, UserInDB, Gender
 
 
 class Username(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     username: str
 
 
 class UserLogin(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     username: str
     password: str
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     phone: str
     username: str
     password: str
@@ -43,12 +49,16 @@ class UserCreate(BaseModel):
 
 
 class UserChangePhone(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     phone: str
     verification_token: str
     verification_code: str
 
 
 class UserChangePassword(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     phone: str
     password: str
     verification_token: str
@@ -56,6 +66,8 @@ class UserChangePassword(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     username: str | None = None
     password: str | None = None
     first_name: str | None = None
@@ -68,9 +80,13 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user: User
 
 
 class UserWithTokenResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user: User
     token: Token

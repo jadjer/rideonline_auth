@@ -95,17 +95,15 @@ async def register(
     if await user_repository.is_exists(request.username):
         raise HTTPException(status.HTTP_409_CONFLICT, strings.USERNAME_TAKEN)
 
-    user = await user_repository.create_user(**request.__dict__)
+    user = await user_repository.create_user(**request.model_dump())
     if user:
         token_access, token_refresh = create_tokens_for_user(user.id, user.username, settings.private_key)
 
         await token_repository.update_token(user.id, token_refresh)
 
-        print(user.__dict__)
-
         return WrapperResponse(
             payload=UserWithTokenResponse(
-                user=User(**user.__dict__),
+                user=user,
                 token=Token(token_access=token_access, token_refresh=token_refresh)
             )
         )
@@ -137,7 +135,7 @@ async def login(
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(**user.__dict__),
+            user=user,
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )
@@ -175,7 +173,7 @@ async def change_password(
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(**user.__dict__),
+            user=user,
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )
@@ -210,7 +208,7 @@ async def refresh_token(
 
     return WrapperResponse(
         payload=UserWithTokenResponse(
-            user=User(**user.__dict__),
+            user=user,
             token=Token(token_access=token_access, token_refresh=token_refresh)
         )
     )

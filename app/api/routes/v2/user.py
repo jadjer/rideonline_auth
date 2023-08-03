@@ -46,7 +46,7 @@ async def get_current_user(
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(**user.__dict__),
+            user=user,
         )
     )
 
@@ -64,13 +64,13 @@ async def update_current_user(
         if await user_repository.is_exists(request.username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=strings.USERNAME_TAKEN)
 
-    user: User = await user_repository.update_user_by_user_id(user.id, **request.__dict__)
+    user: User = await user_repository.update_user_by_user_id(user.id, **request.model_dump())
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=strings.USER_DOES_NOT_EXIST_ERROR)
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(**user.__dict__),
+            user=user,
         )
     )
 
@@ -105,7 +105,7 @@ async def change_phone_for_current_user(
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(**user.__dict__),
+            user=user,
         )
     )
 
@@ -124,6 +124,6 @@ async def get_user_by_id(
 
     return WrapperResponse(
         payload=UserResponse(
-            user=User(**user.__dict__),
+            user=user,
         )
     )

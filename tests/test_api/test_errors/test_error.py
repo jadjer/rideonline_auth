@@ -23,10 +23,10 @@ from app.models.schemas.wrapper import WrapperResponse
 @pytest.mark.asyncio
 async def test_frw_validation_error_format(app: FastAPI):
     async with AsyncClient(base_url="http://localhost:12345", app=app) as client:
-        response = await client.get("/wrong_path/asd")
+        response = await client.get("/wrong_path")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    result = WrapperResponse(**response.json())
+    result = WrapperResponse.model_validate(response.json())
     assert not result.success
     assert "Not Found" in result.message

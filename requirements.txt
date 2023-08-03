@@ -3,6 +3,7 @@ python-jose[cryptography]
 loguru
 uvicorn
 pydantic
+pydantic_settings
 phonenumbers
 pytest
 pytest-asyncio
