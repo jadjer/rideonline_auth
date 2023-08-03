@@ -13,10 +13,16 @@
 #  limitations under the License.
 
 from datetime import datetime
-from pydantic import field_validator, BaseModel, Field
+from pydantic import field_validator, BaseModel, Field, ConfigDict
 
 
-class DateTimeModelMixin(BaseModel):
+class BaseAppModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DateTimeModelMixin(BaseAppModel):
+    model_config = ConfigDict(from_attributes=True)
+
     created_at: datetime = None
     updated_at: datetime = None
 
@@ -26,5 +32,5 @@ class DateTimeModelMixin(BaseModel):
         return value
 
 
-class IDModelMixin(BaseModel):
+class IDModelMixin(BaseAppModel):
     id: int = Field(0, alias="id")

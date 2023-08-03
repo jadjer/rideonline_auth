@@ -12,12 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from pydantic import BaseModel, ConfigDict, typing
+from pydantic import typing
+
+from app.models.common import BaseAppModel
 
 
-class WrapperResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
+class WrapperResponse(BaseAppModel):
     success: bool = True
     payload: typing.Any = None
     message: str = ""

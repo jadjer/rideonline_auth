@@ -13,14 +13,15 @@
 #  limitations under the License.
 
 from datetime import datetime
-from pydantic import BaseModel
+
+from app.models.common import BaseAppModel
 
 
-class JWTMeta(BaseModel):
+class JWTMeta(BaseAppModel):
     exp: datetime
     sub: str
 
 
-class JWTUser(BaseModel):
+class JWTUser(BaseAppModel):
     user_id: int
     username: str
